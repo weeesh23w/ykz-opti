@@ -1731,7 +1731,7 @@ class PurpleApp(ctk.CTk):
 
     def set_icon(self):
         try:
-            icon_path = get_resource_path("new_icon.ico")
+            icon_path = get_resource_path(os.path.join(RESOURCE_DIR, "app_icon.ico"))
             if os.path.exists(icon_path):
                 self.iconbitmap(default=icon_path)
         except Exception as e:
