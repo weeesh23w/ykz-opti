@@ -20,7 +20,7 @@ from PIL import Image, ImageTk
 CURRENT_VERSION = "2.7.3"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
-UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/master/version.json" 
+UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
 
 # Resources folder (put your images and mp3s here)
 RESOURCE_DIR = "resources"
