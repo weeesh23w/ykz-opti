@@ -17,7 +17,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.7.1"
+CURRENT_VERSION = "2.7.2"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/master/version.json" 
@@ -116,7 +116,11 @@ LANG = {
         "rep_c3_t": "Reparar DISM", "rep_c3_d": "Repara la imagen de Windows a fondo (lento).",
         "rep_c4_t": "Check Disk", "rep_c4_d": "Busca errores en el disco principal sin reiniciar.",
         "rep_c5_t": "Reparar Update", "rep_c5_d": "Restablece los servicios de Windows Update.",
-        "rep_c6_t": "Reparar Iconos", "rep_c6_d": "Reconstruye el caché de iconos de Windows.",
+        "rep_c6_t": "Reparar Iconos", "rep_c6_t": "Reparar Iconos", "rep_c6_d": "Reconstruye el caché de iconos de Windows.",
+        "opt_c11_t": "Anti-Telemetría", "opt_c11_d": "Bloquea el envío de datos a Microsoft.",
+        "opt_c12_t": "Ratón Preciso", "opt_c12_d": "Desactiva la aceleración para puntería 1:1.",
+        "opt_c13_t": "Prioridad CPU", "opt_c13_d": "Prioriza juegos frente a procesos del sistema.",
+        "amd_c4_t": "Opti Latencia", "amd_c4_d": "Ajusta FlipQueueSize para menor input lag.",
         "btn_run": "EJECUTAR",
         "lang_opt": "Español"
     },
@@ -153,6 +157,9 @@ LANG = {
         "opti_c8_t": "Disable GameBar", "opti_c8_d": "Improves FPS by disabling Xbox DVR and GameBar.",
         "opti_c9_t": "Visual Performance", "opti_c9_d": "Disables unnecessary Windows visual effects.",
         "opti_c10_t": "YKZ Plan", "opti_c10_d": "Optimized plan for max latency and boost in YKZ.",
+        "opti_c11_t": "Anti-Telemetry", "opti_c11_d": "Blocks data reporting to Microsoft.",
+        "opti_c12_t": "Precision Mouse", "opti_c12_d": "Disables acceleration for 1:1 aim.",
+        "opti_c13_t": "CPU Priority", "opti_c13_d": "Prioritizes games over system processes.",
         "nv_title": "NVIDIA GFORCE CENTER",
         "nv_c1_t": "Pure Config", "nv_c1_d": "Clock boost and low latency.",
         "nv_c2_t": "MSI Mode", "nv_c2_d": "Force Message Signaled Interrupts (MSI) for GPU.",
@@ -161,6 +168,7 @@ LANG = {
         "amd_c1_t": "Disable ULPS", "amd_c1_d": "Disables ultra low power state for more FPS.",
         "amd_c2_t": "Shader Cache", "amd_c2_d": "Forces shader cache on (reduces stuttering).",
         "amd_c3_t": "MSI Mode AMD", "amd_c3_d": "Force MSI interrupts for AMD graphics cards.",
+        "amd_c4_t": "Latency Opti", "amd_c4_d": "Adjusts FlipQueueSize for lower input lag.",
         "nav_amd": "🔴  AMD",
         "act_title": "ACTIVATE WINDOWS",
         "act_c1_t": "Activate Windows", "act_c1_d": "Runs official activation script automatically. May take a few minutes.",
@@ -687,6 +695,9 @@ class OptimizationView(BaseCommandView):
         self.create_card(3, 0, "📵", "Apps en Segundo Plano", "Deshabilita el uso de apps en segundo plano.", self.disable_background_apps)
         self.create_card(3, 1, "🎮", "Desactivar GameBar", "Mejora FPS desactivando Xbox DVR y GameBar.", self.disable_gamebar)
         self.create_card(4, 0, "👁️", "Rendimiento Visual", "Desactiva efectos visuales innecesarios de Windows.", self.visual_performance)
+        self.create_card(4, 1, "🛡️", "Anti-Telemetría", "Bloquea el envío de datos a Microsoft.", self.disable_telemetry)
+        self.create_card(5, 0, "🖱️", "Ratón Preciso", "Desactiva la aceleración para puntería 1:1.", self.mouse_precision)
+        self.create_card(5, 1, "⚡", "Prioridad CPU", "Prioriza juegos frente a procesos del sistema.", self.cpu_priority)
 
     def clean_temp(self):
         cmds = ['del /q /f /s %TEMP%\\*', 'del /q /f /s C:\\Windows\\Temp\\*', 'ipconfig /flushdns']
@@ -739,6 +750,33 @@ class OptimizationView(BaseCommandView):
             'reg add "HKCU\\Control Panel\\Desktop" /v UserPreferencesMask /t REG_BINARY /d 9012018010000000 /f'
         ]
         self.run_cmd(cmds, "Efectos visuales optimizados para rendimiento.")
+
+    def disable_telemetry(self):
+        cmds = [
+            r'reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f',
+            r'reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f',
+            r'sc stop DiagTrack',
+            r'sc config DiagTrack start= disabled',
+            r'sc stop dmwappushservice',
+            r'sc config dmwappushservice start= disabled'
+        ]
+        self.run_cmd(cmds, "Telemetría y servicios de rastreo desactivados.")
+
+    def mouse_precision(self):
+        cmds = [
+            r'reg add "HKCU\Control Panel\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f',
+            r'reg add "HKCU\Control Panel\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f',
+            r'reg add "HKCU\Control Panel\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f',
+            r'reg add "HKCU\Control Panel\Desktop" /v SmoothMouseXCurve /t REG_BINARY /d 00000000000000000000000000000000000000000000000000000000000000000000000000000000 /f',
+            r'reg add "HKCU\Control Panel\Desktop" /v SmoothMouseYCurve /t REG_BINARY /d 00000000000000000000000000000000000000000000000000000000000000000000000000000000 /f'
+        ]
+        self.run_cmd(cmds, "Aceleración de ratón desactivada (Raw Input Style).")
+
+    def cpu_priority(self):
+        cmds = [
+            r'reg add "HKLM\SYSTEM\CurrentControlSet\Control\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f'
+        ]
+        self.run_cmd(cmds, "Prioridad de ráfagas CPU ajustada para aplicaciones en primer plano.")
 
 class PowerPlanView(BaseCommandView):
     def __init__(self, master):
@@ -802,6 +840,7 @@ class AmdView(BaseCommandView):
         self.create_card(0, 0, "🌑", "Desactivar ULPS", "Desactiva estado de ultra bajo consumo para más FPS.", self.disable_ulps, color=COLOR_DANGER)
         self.create_card(0, 1, "📦", "Caché de Sombras", "Fuerza caché de shaders encendida (reduce tirones).", self.shader_cache, color=COLOR_DANGER)
         self.create_card(1, 0, "📬", "MSI Mode AMD", "Fuerza interrupciones MSI para tarjetas gráficas AMD.", self.msi_mode_amd, color=COLOR_DANGER)
+        self.create_card(1, 1, "⚡", "Opti Latencia", "Ajusta FlipQueueSize para menor input lag.", self.amd_latency_tweak, color=COLOR_DANGER)
 
     def disable_ulps(self):
         cmds = [
@@ -823,6 +862,14 @@ class AmdView(BaseCommandView):
             'foreach ($gpu in $gpus) { $path = "HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\$($gpu.DeviceID)\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties"; if (!(Test-Path $path)) { New-Item -Path $path -Force }; Set-ItemProperty -Path $path -Name "MSISupported" -Value 1 -Type DWord }'
         ]
         self.run_cmd(cmds, "Modo MSI activado para GPU AMD.")
+
+    def amd_latency_tweak(self):
+        cmds = [
+            # FlipQueueSize fix for AMD to reduce input lag
+            r'reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v FlipQueueSize /t REG_BINARY /d 3100 /f',
+            r'reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0001" /v FlipQueueSize /t REG_BINARY /d 3100 /f'
+        ]
+        self.run_cmd(cmds, "Optimizaciones de latencia AMD aplicadas.")
 
 class CleaningView(BaseCommandView):
     def __init__(self, master):
