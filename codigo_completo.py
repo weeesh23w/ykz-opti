@@ -17,7 +17,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.7.2"
+CURRENT_VERSION = "2.7.3"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/master/version.json" 
@@ -1839,7 +1839,10 @@ class PurpleApp(ctk.CTk):
                 bat_path = os.path.join(tempfile.gettempdir(), "update_ykz.bat")
                 with open(bat_path, "w") as f:
                     f.write(f'''@echo off
-timeout /t 3 /nobreak > NUL
+title YKZ Update Assistant
+echo Espere a que se complete la actualizacion...
+timeout /t 6 /nobreak > NUL
+taskkill /F /IM "{os.path.basename(exe_path)}" /T > NUL 2>&1
 move /y "{new_exe_path}" "{exe_path}"
 start "" "{exe_path}"
 del "%~f0"
