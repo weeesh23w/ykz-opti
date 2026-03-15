@@ -1543,12 +1543,15 @@ del "%~f0"
 ''')
                 
                 # Ejecutar el .bat de forma silenciosa e independiente
-                import ctypes
-                # SW_HIDE = 0. Ocultar completamente la ventana de consola cmd
-                ctypes.windll.shell32.ShellExecuteW(None, "open", bat_path, "", None, 0)
+                import subprocess
+                env = os.environ.copy()
+                env.pop('_MEIPASS2', None)
+                env.pop('_MEIPASS', None)
+                subprocess.Popen(["cmd.exe", "/c", bat_path], creationflags=0x08000000, env=env)
                 
-                # Forzar el cierre de la aplicación actual 
-                os._exit(0)
+                # Forzar el cierre de la aplicacion de forma LIMPIA (asi Pyinstaller limpia el _MEI temp 
+                # y no salta el error "Failed to load Python DLL" al ser deleteado)
+                self.after(500, self.destroy)
 
             except Exception as e:
                 logging.error(f"Update error: {e}")
@@ -1943,8 +1946,18 @@ if __name__ == "__main__":
     except Exception:
         is_admin = False
         
+    import hashlib
+    task_hash = hashlib.md5(sys.executable.encode('utf-8')).hexdigest()[:8]
+    task_name = f"YKZ_OPTI_{task_hash}"
+        
     if not is_admin and hasattr(ctypes, 'windll'):
-        # Relanzar el programa completo como administrador y cerrar este
+        # 1. Intentar correr la tarea programada silenciosa para saltar UAC
+        # Si funciona (es decir, ya le dimos si al Admin alguna vez), inicia la app por ahi
+        res = subprocess.call(f'schtasks /run /tn "{task_name}"', creationflags=0x08000000)
+        if res == 0:
+            sys.exit(0) # Cerramos la instancia actual silenciosamente
+            
+        # 2. Si no existe la tarea, pedimos UAC (pasará solo la primera vez)
         exe = sys.executable
         if getattr(sys, 'frozen', False):
             # Si es el archivo compilado .exe
@@ -1953,6 +1966,16 @@ if __name__ == "__main__":
             # Si se lanza desde código fuente .py
             ctypes.windll.shell32.ShellExecuteW(None, "runas", exe, f'"{os.path.abspath(__file__)}"', None, 1)
         sys.exit()
+
+    # Si estamos ejecutándonos como Administrador, creamos permanentemente la tarea
+    if is_admin and getattr(sys, 'frozen', False):
+        try:
+            exe_path = sys.executable
+            working_dir = os.path.dirname(exe_path)
+            ps_cmd = f"Register-ScheduledTask -Action (New-ScheduledTaskAction -Execute '{exe_path}' -WorkingDirectory '{working_dir}') -TaskName '{task_name}' -RunLevel Highest -Force"
+            subprocess.call(["powershell.exe", "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", ps_cmd], creationflags=0x08000000)
+        except Exception as e:
+            logging.error(f"Error Register-ScheduledTask: {e}")
 
     if len(sys.argv) == 3 and sys.argv[1] == "--run-ps1":
         ps1_path = sys.argv[2]
