@@ -12,12 +12,13 @@ import logging
 import hashlib # For license check
 import json
 import urllib.request
-from tkinter import messagebox
+import psutil
+from tkinter import messagebox, ttk
 import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.7.4"
+CURRENT_VERSION = "2.7.5"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -1015,33 +1016,36 @@ class DriversView(ctk.CTkFrame):
         super().__init__(master, fg_color="transparent")
         self.pack_propagate(False)
         
-        # --- Cabecera Tipo Driver Booster ---
+        # Tema profesional Morado/Rojo (mezcla Driver Booster + YKZ)
+        self.accent_color = "#7a2cff" 
+        
+        # --- Cabecera Profesional ---
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.header_frame.pack(fill="x", padx=20, pady=(20, 10))
         
-        # Banner Rojo Oscuro
-        self.banner = ctk.CTkFrame(self.header_frame, fg_color="#1f1f1f", border_width=1, border_color="#333333")
+        # Banner Principal
+        self.banner = ctk.CTkFrame(self.header_frame, fg_color="#121217", border_width=1, border_color="#333333")
         self.banner.pack(fill="x", expand=True)
         
-        self.lbl_info_icon = ctk.CTkLabel(self.banner, text="ℹ️", font=("Segoe UI Emoji", 28), text_color="#ff3333")
+        self.lbl_info_icon = ctk.CTkLabel(self.banner, text="🚗", font=("Segoe UI Emoji", 28))
         self.lbl_info_icon.pack(side="left", padx=(20, 15), pady=20)
         
-        self.lbl_status_main = ctk.CTkLabel(self.banner, text="Haz clic en Escanear para buscar controladores desactualizados.", font=("Arial", 16), text_color="white", justify="left")
+        self.lbl_status_main = ctk.CTkLabel(self.banner, text="Haz clic en ESCANEAR AHORA para analizar tu hardware real.", font=("Segoe UI", 16), text_color="white", justify="left")
         self.lbl_status_main.pack(side="left", pady=15)
         
-        self.btn_huge_scan = ctk.CTkButton(self.banner, text="Escanear Sistema", font=("Arial", 14, "bold"), 
-                                            fg_color="#333333", hover_color="#555555", text_color="white",
-                                            corner_radius=2, height=40, command=self.scan_drivers)
+        self.btn_huge_scan = ctk.CTkButton(self.banner, text="ESCANEAR AHORA", font=("Segoe UI", 14, "bold"), 
+                                            fg_color=self.accent_color, hover_color="#6221cc", text_color="white",
+                                            corner_radius=4, height=45, command=self.scan_drivers_pro)
         self.btn_huge_scan.pack(side="right", padx=20)
         
-        # --- Panel de Progreso (Oculto por defecto) ---
+        # --- Panel de Progreso ---
         self.prog_panel = ctk.CTkFrame(self, fg_color="transparent")
         self.prog_panel.pack(fill="x", padx=20, pady=(0, 10))
         
-        self.lbl_scan_desc = ctk.CTkLabel(self.prog_panel, text="", font=("Arial", 12), text_color="#aaaaaa")
+        self.lbl_scan_desc = ctk.CTkLabel(self.prog_panel, text="", font=("Segoe UI", 12), text_color="#aaaaaa")
         self.lbl_scan_desc.pack(anchor="w")
         
-        self.progress = ctk.CTkProgressBar(self.prog_panel, mode="indeterminate", height=4, corner_radius=0, progress_color="#ff3333", fg_color="#333333")
+        self.progress = ctk.CTkProgressBar(self.prog_panel, height=4, corner_radius=0, progress_color=self.accent_color, fg_color="#1f1f2e")
         self.progress.pack(fill="x", pady=(5, 0))
         self.progress.set(0)
         self.prog_panel.pack_forget()
@@ -1050,493 +1054,126 @@ class DriversView(ctk.CTkFrame):
         self.controls_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.controls_frame.pack(fill="x", padx=20, pady=(0, 5))
         
-        self.chk_all = ctk.CTkCheckBox(self.controls_frame, text="Desactualizado (total: 0, seleccionado: 0)", font=("Arial", 12), text_color="#888888", fg_color="#ff3333", hover_color="#cc2222", corner_radius=2, checkbox_width=18, checkbox_height=18, command=self._on_check_all)
-        self.chk_all.pack(side="left")
-        self.chk_all.select()
-        
-        self.chk_restart = ctk.CTkCheckBox(self.controls_frame, text="Reinicio automático al finalizar", font=("Arial", 12), text_color="#888888", fg_color="#ff3333", hover_color="#cc2222", corner_radius=2, checkbox_width=18, checkbox_height=18)
+        self.chk_restart = ctk.CTkCheckBox(self.controls_frame, text="Reiniciar sistema al finalizar", font=("Segoe UI", 12), text_color="#bbbbbb", fg_color=self.accent_color, hover_color="#6221cc", corner_radius=2)
         self.chk_restart.pack(side="right")
         self.chk_restart.select()
         
-        # --- Lista de Resultados ---
+        # --- Lista de Resultados (Treeview Moderno) ---
         self.results_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.results_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
         
-        self.list_frame = ctk.CTkScrollableFrame(self.results_frame, fg_color="transparent")
-        self.list_frame.pack(fill="both", expand=True)
+        # Treeview Styles
+        style = ttk.Style()
+        style.configure("Treeview", background="#111116", foreground="white", fieldbackground="#111116", borderwidth=0, rowheight=35, font=("Segoe UI", 11))
+        style.configure("Treeview.Heading", background="#1a1a24", foreground=self.accent_color, font=("Segoe UI", 11, "bold"), borderwidth=0)
+        style.map("Treeview", background=[('selected', '#321463')])
+
+        # Table Frame
+        self.table_frame = ctk.CTkFrame(self.results_frame, fg_color="#111116", corner_radius=10)
+        self.table_frame.pack(fill="both", expand=True)
+
+        columns = ("device", "manufacturer", "version", "date", "status")
+        self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings", selectmode="browse")
+        
+        # Scrollbar para la tabla
+        self.scrollbar = ttk.Scrollbar(self.table_frame, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=self.scrollbar.set)
+        
+        self.tree.heading("device", text="DISPOSITIVO")
+        self.tree.heading("manufacturer", text="FABRICANTE")
+        self.tree.heading("version", text="VER. INSTALADA")
+        self.tree.heading("date", text="FECHA")
+        self.tree.heading("status", text="ESTADO")
+        
+        self.tree.column("device", width=350, anchor="w")
+        self.tree.column("manufacturer", width=120, anchor="center")
+        self.tree.column("version", width=150, anchor="center")
+        self.tree.column("date", width=120, anchor="center")
+        self.tree.column("status", width=150, anchor="center")
+        
+        self.scrollbar.pack(side="right", fill="y")
+        self.tree.pack(side="left", fill="both", expand=True, padx=2, pady=2)
         
         self.driver_items = []
 
-    def _on_check_all(self):
-        is_selected = self.chk_all.get()
-        for item in getattr(self, "driver_items", []):
-            if hasattr(item, 'chk'):
-                if is_selected: item.chk.select()
-                else: item.chk.deselect()
-        self._update_selected_count()
-
-    def _on_item_check(self):
-        self._update_selected_count()
-
-    def _update_selected_count(self):
-        count = sum(1 for item in getattr(self, "driver_items", []) if hasattr(item, 'chk') and item.chk.get())
-        total = len(getattr(self, "driver_items", []))
-        self.chk_all.configure(text=f"Desactualizado (total: {total}, seleccionado: {count})")
-
     def log(self, msg):
-        try:
-            import tempfile
-            log_path = os.path.join(tempfile.gettempdir(), "debug_log.txt")
-            with open(log_path, "a", encoding="utf-8") as f:
-                import datetime
-                f.write(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
-        except: pass
+        logging.info(f"[Drivers] {msg}")
 
-    def create_device_item(self, name, icon=None, date_str=None, local_ver=None, local_date=None, is_gpu=False):
-        frame = ctk.CTkFrame(self.list_frame, fg_color="#262626", corner_radius=0, border_width=0)
-        frame.pack(fill="x", pady=2)
-        
-        # Estilo Checkbox
-        chk = ctk.CTkCheckBox(frame, text="", width=20, fg_color="#ff3333", hover_color="#cc2222", corner_radius=2, checkbox_width=18, checkbox_height=18, command=self._on_item_check)
-        chk.pack(side="left", padx=(15, 10), pady=15)
-        chk.select()
-        frame.chk = chk
-        
-        # Info del componente
-        info_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        info_frame.pack(side="left", fill="x", expand=True)
-        
-        lbl_group = ctk.CTkLabel(info_frame, text="Dispositivo del sistema", font=("Arial", 14), text_color="white", anchor="w")
-        lbl_group.pack(anchor="w", pady=(5,0))
-        lbl_name = ctk.CTkLabel(info_frame, text=name, font=("Arial", 11), text_color="#888888", anchor="w")
-        lbl_name.pack(anchor="w", pady=(0,5))
-        
-        # Estado (Instalado: ... Disponible: ...)
-        status_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        status_frame.pack(side="left", padx=20)
-        
-        st_row1 = ctk.CTkFrame(status_frame, fg_color="transparent")
-        st_row1.pack(anchor="e")
-        ctk.CTkLabel(st_row1, text="Instalado: ", font=("Arial", 11), text_color="#888888").pack(side="left")
-        
-        inst_text = f"v{local_ver} ({local_date})" if local_ver and local_ver != "N/A" else "Ausente/Desconocido"
-        inst_color = "#aaaaaa" if local_ver and local_ver != "N/A" else "#ffaa00"
-        lbl_local = ctk.CTkLabel(st_row1, text=inst_text, font=("Arial", 11), text_color=inst_color)
-        lbl_local.pack(side="left")
-        frame.lbl_local = lbl_local
-        
-        st_row2 = ctk.CTkFrame(status_frame, fg_color="transparent")
-        st_row2.pack(anchor="e")
-        ctk.CTkLabel(st_row2, text="Disponible: ", font=("Arial", 11), text_color="#888888").pack(side="left")
-        
-        if not date_str:
-            # Fallback to a random recent date if WMI failed
-            import datetime, random
-            date_str = (datetime.datetime.now() - datetime.timedelta(days=random.randint(1, 90))).strftime("%m/%d/%Y")
-        ctk.CTkLabel(st_row2, text=date_str, font=("Arial", 11), text_color="#aaaaaa").pack(side="left")
-        
-        # Botón actualización individual
-        btn_update = ctk.CTkButton(frame, text="Actualizar", font=("Arial", 12), fg_color="#3a3a3a", hover_color="#4a4a4a", text_color="white", width=95, height=30, corner_radius=2, command=lambda n=name: self.update_drivers(specific_name=n))
-        btn_update.pack(side="right", padx=20)
-        
-        frame.device_name = name
-        frame.is_gpu = is_gpu
-        self.driver_items.append(frame)
-
-    def scan_drivers(self):
-        if getattr(self, "is_scanning", False) or getattr(self, "is_updating", False): return
+    def scan_drivers_pro(self):
+        if getattr(self, "is_scanning", False): return
         self.is_scanning = True
         
         self.btn_huge_scan.configure(state="disabled", text="Escaneando...")
         self.prog_panel.pack(fill="x", padx=20, pady=(0, 10), after=self.header_frame)
-        self.lbl_scan_desc.configure(text="Comprobando el estado de los controladores del sistema...")
-        self.progress.configure(mode="indeterminate")
+        self.tree.delete(*self.tree.get_children())
+        self.progress.set(0)
         self.progress.start()
         
-        self.driver_items.clear()
-        for w in self.list_frame.winfo_children(): w.destroy()
-        
-        import threading
-        threading.Thread(target=self._scan_process, daemon=True).start()
+        threading.Thread(target=self._scan_thread_pro, daemon=True).start()
 
-    def _scan_process(self):
-        import time
-        import urllib.request, urllib.parse, re
-        
-        self.pending_updates = []
-        
-        def scrape_ms_catalog(hwid):
-            if not hwid: return None, None
-            match = re.search(r'(VEN_[0-9A-Fa-f]+&DEV_[0-9A-Fa-f]+)', hwid)
-            if not match: return None, None
-            clean_hwid = match.group(1)
-            
-            url = f"https://www.catalog.update.microsoft.com/Search.aspx?q={urllib.parse.quote(clean_hwid)}"
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            try:
-                html = urllib.request.urlopen(req, timeout=5).read().decode('utf-8')
-                update_ids = re.findall(r"goToDetails\('([a-f0-9\-]+)'\)", html)
-                dates = re.findall(r'(\d{1,2}/\d{1,2}/\d{4})', html)
-                
-                if update_ids and dates:
-                    uid = update_ids[0]
-                    date_str = dates[0]
-                    
-                    post_data = f"updateIDs=[{{\"size\":0,\"languages\":\"\",\"uidInfo\":\"{uid}\",\"updateID\":\"{uid}\"}}]".encode('utf-8')
-                    dl_url = "https://www.catalog.update.microsoft.com/DownloadDialog.aspx"
-                    dl_req = urllib.request.Request(dl_url, data=post_data, headers={'User-Agent': 'Mozilla/5.0', 'Content-Type': 'application/x-www-form-urlencoded'})
-                    dl_html = urllib.request.urlopen(dl_req, timeout=5).read().decode('utf-8')
-                    
-                    links = re.findall(r"downloadInformation\[0\]\.files\[0\]\.url = '([^']+)';", dl_html)
-                    if links:
-                        return date_str, links[0]
-            except Exception as e:
-                self.log(f"MS Catalog Scrape error for {hwid}: {e}")
-            return None, None
-        
-        try:
-            # Simular búsqueda profunda al estilo Driver Booster
-            time.sleep(1.0)
-            self.after(0, lambda: self.lbl_scan_desc.configure(text="Sincronizando con Microsoft Update Catalog..."))
-            time.sleep(1.5)
-            self.after(0, lambda: self.lbl_scan_desc.configure(text="Analizando IDs de hardware y buscando drivers..."))
-            time.sleep(1.0)
-            
-            devices = []
-            
-            # Recolectar lista del sistema
-            pythoncom.CoInitialize()
-            c = wmi.WMI()
-            try:
-                pnp_drivers = {d.DeviceID: d for d in c.Win32_PnPSignedDriver() if d.DeviceID}
-                
-                for gpu in c.Win32_VideoController():
-                    pnp_id = getattr(gpu, 'PNPDeviceID', None)
-                    local_ver = "N/A"
-                    local_date = "N/A"
-                    if pnp_id and pnp_id in pnp_drivers:
-                        drv = pnp_drivers[pnp_id]
-                        local_ver = getattr(drv, 'DriverVersion', "N/A")
-                        if getattr(drv, 'DriverDate', None):
-                            local_date = str(drv.DriverDate)[:8]
-                            try: local_date = f"{local_date[4:6]}/{local_date[6:8]}/{local_date[:4]}"
-                            except: pass
-                    
-                    is_gpu = False
-                    dl_url = None
-                    date_str = None
-                    gpu_name = str(getattr(gpu, 'Name', ''))
-                    
-                    gpu_upper = str(gpu_name).upper()
-                    if "NVIDIA" in gpu_upper or "RADEON" in gpu_upper or "DISPLAY" in str(getattr(gpu, 'PNPClass', '')).upper():
-                        is_gpu = True
-                        date_str = "Última Versión Oficial"
-                        if "NVIDIA" in gpu_name.upper():
-                            dl_url = "https://us.download.nvidia.com/Windows/551.86/551.86-desktop-win10-win11-64bit-international-dch-whql.exe"
-                        elif "RADEON" in gpu_name.upper():
-                            dl_url = "https://drivers.amd.com/drivers/installer/23.40/whql/amd-software-adrenalin-edition-24.3.1-minimalsetup-240320_web.exe"
-                        else:
-                            dl_url = "https://us.download.nvidia.com/Windows/551.86/551.86-desktop-win10-win11-64bit-international-dch-whql.exe"
-                    else:
-                        date_str, dl_url = scrape_ms_catalog(pnp_id)
-                        
-                    devices.append((f'{gpu.Name}', '🎮', date_str, local_ver, local_date, is_gpu))
-                    if dl_url: self.pending_updates.append({'name': gpu.Name, 'url': dl_url, 'is_gpu': is_gpu})
+    def _scan_thread_pro(self):
+        from driver_scanner import DriverScanner
+        scanner = DriverScanner(lambda m: self.after(0, lambda msg=m: self.lbl_scan_desc.configure(text=msg)))
+        drivers = scanner.scan()
+        self.after(0, lambda: self._finish_scan_pro(drivers))
 
-                for net in c.Win32_NetworkAdapter(PhysicalAdapter=True):
-                    if 'virtual' not in net.Name.lower():
-                        pnp_id = getattr(net, 'PNPDeviceID', None)
-                        local_ver = "N/A"
-                        local_date = "N/A"
-                        if pnp_id and pnp_id in pnp_drivers:
-                            drv = pnp_drivers[pnp_id]
-                            local_ver = getattr(drv, 'DriverVersion', "N/A")
-                            if getattr(drv, 'DriverDate', None):
-                                local_date = str(drv.DriverDate)[:8]
-                                try: local_date = f"{local_date[4:6]}/{local_date[6:8]}/{local_date[:4]}"
-                                except: pass
-                        date_str, dl_url = scrape_ms_catalog(pnp_id)
-                        devices.append((f'{net.Name}', '�', date_str, local_ver, local_date, False))
-                        if dl_url: self.pending_updates.append({'name': net.Name, 'url': dl_url, 'is_gpu': False})
-                        
-                for audio in c.Win32_SoundDevice():
-                    pnp_id = getattr(audio, 'PNPDeviceID', None)
-                    local_ver = "N/A"
-                    local_date = "N/A"
-                    if pnp_id and pnp_id in pnp_drivers:
-                        drv = pnp_drivers[pnp_id]
-                        local_ver = getattr(drv, 'DriverVersion', "N/A")
-                        if getattr(drv, 'DriverDate', None):
-                            local_date = str(drv.DriverDate)[:8]
-                            try: local_date = f"{local_date[4:6]}/{local_date[6:8]}/{local_date[:4]}"
-                            except: pass
-                    date_str, dl_url = scrape_ms_catalog(pnp_id)
-                    devices.append((f'{audio.Name}', '🔊', date_str, local_ver, local_date, False))
-                    if dl_url: self.pending_updates.append({'name': audio.Name, 'url': dl_url, 'is_gpu': False})
-                    
-                for cpu in c.Win32_Processor():
-                    pnp_id = getattr(cpu, 'PNPDeviceID', '')
-                    local_ver = "N/A"
-                    local_date = "N/A"
-                    if pnp_id and pnp_id in pnp_drivers:
-                        drv = pnp_drivers[pnp_id]
-                        local_ver = getattr(drv, 'DriverVersion', "N/A")
-                        if getattr(drv, 'DriverDate', None):
-                            local_date = str(drv.DriverDate)[:8]
-                            try: local_date = f"{local_date[4:6]}/{local_date[6:8]}/{local_date[:4]}"
-                            except: pass
-                    date_str, dl_url = scrape_ms_catalog(pnp_id)
-                    devices.append((f'{cpu.Name}', '💠', date_str, local_ver, local_date, False))
-                    if dl_url: self.pending_updates.append({'name': cpu.Name, 'url': dl_url, 'is_gpu': False})
-                    break
-                
-                if len(devices) < 4:
-                    devices.append(('Controladora de bus SM', '💻', None, "N/A", "N/A", False))
-                    devices.append(('Dispositivo PCI', '💻', None, "N/A", "N/A", False))
-                    devices.append(('Dispositivo base del sistema', '💻', None, "N/A", "N/A", False))
-                    devices.append(('Controladora de adquisición de datos', '🔌', None, "N/A", "N/A", False))
-            except Exception as wmi_ex:
-                self.log(f'WMI iter error: {wmi_ex}')
-                
-            if not devices:
-                devices.append(("Controladores Generales del Sistema", "💻", None, "N/A", "N/A", False))
-            
-            self.after(0, lambda: self._populate_drivers(devices))
-            
-        except Exception as e:
-            self.log(f"Error escaneo: {e}")
-            self.after(0, lambda: self.lbl_scan_desc.configure(text=f"Error: {str(e)[:50]}"))
-            self.after(2000, lambda: self._reset_scan_ui())
-
-    def _reset_scan_ui(self):
-        self.is_scanning = False
-        self.btn_huge_scan.configure(state="normal", text="Escanear Sistema")
-        self.prog_panel.pack_forget()
+    def _finish_scan_pro(self, drivers):
         self.progress.stop()
-
-    def _populate_drivers(self, devices):
-        for data in devices:
-            if len(data) >= 6:
-                name, icon, date_str, local_ver, local_date, is_gpu = data[:6]
-                self.create_device_item(name, icon, date_str, local_ver, local_date, is_gpu)
-            elif len(data) == 3:
-                name, icon, date_str = data
-                self.create_device_item(name, icon, date_str)
-            else:
-                self.create_device_item(*data)
-            
-        is_empty = (not devices) or (len(devices) == 1 and devices[0][0] == "Controladores Generales del Sistema")
-        count = 0 if is_empty else len(devices)
-        self._update_selected_count()
-        
-        # Textos Rojos tipo Driver Booster
-        self.lbl_status_main.configure(text=f"{count} controladores de dispositivos desactualizados & 0\ncontroladores de juegos no instalados", text_color="#ff4444")
-        self.banner.configure(fg_color="#181818", border_color="#ff4444") # Red border
-        self.lbl_info_icon.configure(text="ℹ️", text_color="#ff4444")
-        
-        # Botón Principal Rojo
-        self.btn_huge_scan.configure(text="Actualizar Ahora", font=("Arial", 14), fg_color="#ff2222", hover_color="#dd1111", text_color="white", corner_radius=2, command=self.update_drivers)
-        self.btn_huge_scan.pack(side="right", padx=15)
-        
+        self.progress.set(1)
         self.is_scanning = False
-        self.prog_panel.pack_forget()
-        self.progress.stop()
         
-        self.btn_huge_scan.configure(state="normal")
-        self.btn_huge_scan.after(10, lambda: self.btn_huge_scan.pack(side="right", padx=20))
+        for d in drivers:
+            status = d.get('status', 'Al día')
+            
+            # Solo mostrar los que necesitan actualización
+            if status != "Update Available":
+                continue
+            
+            item_id = self.tree.insert("", "end", values=(
+                d['name'], 
+                d['manufacturer'], 
+                d['version'], 
+                d['date'], 
+                status
+            ))
+            
+            # Resaltar en naranja/amarillo
+            self.tree.tag_configure('update', foreground="#ffaa00")
+            self.tree.item(item_id, tags=('update',))
+            
+        self.lbl_status_main.configure(text=f"Escaneo completado. {len(drivers)} dispositivos analizados.", text_color=self.accent_color)
+        self.btn_huge_scan.configure(state="normal", text="ACTUALIZAR TODO", fg_color="#1e5128", hover_color="#14361b", command=self.update_all_pro)
 
-    def update_drivers(self, specific_name=None):
-        if getattr(self, "is_updating", False) or getattr(self, "is_scanning", False): return
-        self.is_updating = True
-        
-        self.btn_huge_scan.configure(state="disabled", text="Descargando...")
-        self.prog_panel.pack(fill="x", padx=20, pady=(0, 10), after=self.header_frame)
-        self.lbl_scan_desc.configure(text="Inicializando motor de descarga e instalación silenciosa...")
-        self.progress.configure(mode="indeterminate")
+    def update_all_pro(self):
+        from driver_updater import DriverUpdater
+        self.btn_huge_scan.configure(state="disabled", text="Actualizando...")
+        self.lbl_scan_desc.configure(text="Paso 1: Creando punto de restauración y asegurando módulos...")
         self.progress.start()
         
-        # Desactivar los botones individuales
-        for item in self.driver_items:
-            for child in item.winfo_children():
-                if isinstance(child, ctk.CTkButton):
-                    child.configure(state="disabled", text="Descargando", fg_color="#333333")
-                    
+        threading.Thread(target=self._update_thread_pro, daemon=True).start()
+
+    def _update_thread_pro(self):
+        from driver_updater import DriverUpdater
+        updater = DriverUpdater(lambda m: self.after(0, lambda msg=m: self.lbl_scan_desc.configure(text=msg)))
+        
+        # Paso 1: Puntos de restauración (Seguridad)
+        updater.create_restore_point()
+        
+        # Paso 2: Instalación vía Windows Update
         do_restart = self.chk_restart.get() == 1
+        proc = updater.install_all_drivers_ps(auto_reboot=do_restart)
         
-        import threading
-        threading.Thread(target=self._update_process, args=(do_restart, specific_name), daemon=True).start()
-
-    def _update_process(self, do_restart, specific_name=None):
-        import time, os, subprocess, urllib.request, zipfile
-        self.log("INICIANDO PROCESO DE ACTUALIZACIÓN")
-        
-        has_errors = False
-        
-        try:
-            self.after(0, lambda: self.lbl_scan_desc.configure(text="Descargando controladores desde Microsoft Update Catalog..."))
-            
-            temp_driver_dir = os.path.join(os.environ.get('TEMP', 'C:\\Temp'), "DownloadedDrivers")
-            os.makedirs(temp_driver_dir, exist_ok=True)
-            
-            updates = getattr(self, "pending_updates", [])
-            
-            selected_names = set()
-            if specific_name:
-                selected_names.add(specific_name)
-            else:
-                for item in getattr(self, "driver_items", []):
-                    if hasattr(item, 'chk') and item.chk.get():
-                        selected_names.add(getattr(item, "device_name", ""))
-            
-            filtered_updates = [u for u in updates if u.get("name") in selected_names]
-            
-            if not filtered_updates and not specific_name:
-                for item in getattr(self, "driver_items", []):
-                    if hasattr(item, 'chk') and item.chk.get():
-                        filtered_updates.append({"name": getattr(item, "device_name", "Desconocido"), "url": None, "is_gpu": False})
-                if not filtered_updates:
-                    filtered_updates.append({"name": "Dispositivos Estándar de Sistema", "url": None, "is_gpu": False})
-                
-            for i, update in enumerate(filtered_updates):
-                name = update.get("name", "Sistema")
-                url = update.get("url", None)
-                is_gpu = update.get("is_gpu", False)
-                item_frame = None
-                
-                for f in getattr(self, "driver_items", []):
-                    if hasattr(f, "device_name") and f.device_name == name:
-                        item_frame = f
-                        break
-                
-                self.after(0, lambda n=name: self.lbl_scan_desc.configure(text=f"Descargando {n}..."))
-                time.sleep(0.5) 
-                
-                if url:
-                    self.log(f"Descargando driver para {name} de {url}")
-                    ext = ".exe" if is_gpu else ".cab"
-                    dl_path = os.path.join(temp_driver_dir, f"driver_{i}{ext}")
-                    dest_path = os.path.join(temp_driver_dir, f"extracted_{i}")
-                    os.makedirs(dest_path, exist_ok=True)
-                    
-                    try:
-                        def update_ui_progress(n, p, t_str, d_mb, tot_mb):
-                            self.lbl_scan_desc.configure(text=f"Descargando {n}... {p}% ({d_mb:.1f}/{tot_mb:.1f} MB) - Quedan: {t_str}")
-                            self.progress.stop()
-                            self.progress.configure(mode="determinate")
-                            self.progress.set(p / 100.0)
-                            
-                        def reporthook(block_num, block_size, total_size):
-                            if total_size > 0:
-                                downloaded = block_num * block_size
-                                percent = min(100, int(downloaded * 100 / total_size))
-                                
-                        reporthook.start_time = getattr(reporthook, 'start_time', time.time())
-                        reporthook.last_update = getattr(reporthook, 'last_update', time.time())
-                        urllib.request.urlretrieve(url, dl_path, reporthook)
-                        
-                        self.after(0, lambda: [self.progress.configure(mode="indeterminate"), self.progress.start()])
-                        
-                        if not os.path.exists(dl_path):
-                            raise Exception("Archivo no encontrado tras la descarga.")
-                            
-                        # Validación estricta
-                        file_size = os.path.getsize(dl_path)
-                        self.log(f"Descargado: {dl_path} | Tamaño: {file_size} bytes")
-                        
-                        if file_size < 1048576:
-                            with open(dl_path, 'r', errors='ignore') as check_f:
-                                content = check_f.read(500).lower()
-                                if "<html" in content or "<!doctype" in content:
-                                    raise Exception("El archivo descargado es un HTML de error.")
-                            raise Exception(f"Archivo demasiado pequeño ({file_size} bytes). Corrupción.")
-                        
-                        if is_gpu:
-                            self.after(0, lambda n=name: self.lbl_scan_desc.configure(text=f"Instalando {n} silenciosamente (no apague)..."))
-                            self.log(f"Ejecutando GPU Installer: {dl_path} -s")
-                            # Esperar finalización del proceso
-                            process = subprocess.run([dl_path, "-s"], capture_output=True, text=True, creationflags=0x08000000)
-                            self.log(f"GPU Install ExitCode: {process.returncode} | ERR: {process.stderr}")
-                            if process.returncode != 0 and process.returncode != 3010: # pending reboot
-                                raise Exception(f"Error instalación GPU. Salida: {process.stderr}")
-                        else:
-                            self.after(0, lambda n=name: self.lbl_scan_desc.configure(text=f"Descomprimiendo e instalando {n}..."))
-                            self.log(f"Extrayendo archivo a {dest_path}")
-                            if dl_path.endswith('.cab'):
-                                exp_proc = subprocess.run(f'expand "{dl_path}" -F:* "{dest_path}"', shell=True, capture_output=True, text=True, creationflags=0x08000000)
-                                if exp_proc.returncode != 0:
-                                    raise Exception(f"Fallo extraer CAB. STDERR: {exp_proc.stderr}")
-                            elif dl_path.endswith('.zip'):
-                                with zipfile.ZipFile(dl_path, 'r') as zip_ref:
-                                    zip_ref.extractall(dest_path)
-                                    
-                            cmd = f'pnputil /add-driver "{dest_path}\\*.inf" /install /subdirs'
-                            self.log(f"Ejecutando: {cmd}")
-                            proc = subprocess.run(cmd, shell=True, capture_output=True, text=True, creationflags=0x08000000)
-                            self.log(f"pnputil ExitCode: {proc.returncode} | STDOUT: {proc.stdout}")
-                            
-                            if proc.returncode != 0 and "Falló" in proc.stdout: 
-                                raise Exception(f"Fallo pnputil ({proc.returncode}): {proc.stderr}")
-                    except Exception as ex:
-                        has_errors = True
-                        self.log(f"ERROR proc: {name} -> {ex}")
-                        if item_frame: self.after(0, lambda f=item_frame: self._mark_item_failed(f))
-                        
-                else:
-                    self.after(0, lambda n=name: self.lbl_scan_desc.configure(text=f"Integrando {n} de local..."))
-                    time.sleep(1.0)
-                    
-            self.after(0, lambda: self.lbl_scan_desc.configure(text="Finalizando..."))
-            time.sleep(1.0)
-            
-            if has_errors:
-                self.after(0, lambda: self.finish_update(False, error=True))
-            else:
-                self.after(0, lambda: self.finish_update(do_restart, error=False))
-                
-        except Exception as e:
-            has_errors = True
-            self.log(f"Error Update general: {e}")
-            self.after(0, lambda: self.lbl_scan_desc.configure(text=f"Fallo crítico: {e}"))
-            self.after(3000, lambda: self.finish_update(False, error=True))
-
-    def _mark_item_failed(self, frame):
-        if hasattr(frame, 'lbl_local'):
-            frame.lbl_local.configure(text="Fallo Extracción/Install", text_color="#ff0000")
-        for child in getattr(frame, "winfo_children", lambda:[])():
-            if isinstance(child, ctk.CTkButton):
-                child.configure(text="Fallo", fg_color="#aa0000", hover_color="#880000")
-
-    def finish_update(self, do_restart, error=False):
-        self.progress.stop()
-        self.prog_panel.pack_forget()
-        self.is_updating = False
-        
-        if not error:
-            # Texto Verde de éxito
-            self.lbl_status_main.configure(text="Todos los controladores están instalados y al día.", text_color="#00dd00")
-            self.banner.configure(fg_color="#111111", border_color="#00aa00")
-            self.lbl_info_icon.configure(text="✔️", text_color="#00cc00")
-            
-            self.btn_huge_scan.configure(state="disabled", text="Al Día", fg_color="#222222")
-            self.chk_all.configure(text="Actualizado (total: 0, seleccionado: 0)", fg_color="#00aa00", text_color="#555")
-            
-            for item in self.driver_items:
-                for child in getattr(item, "winfo_children", lambda:[])():
-                    if isinstance(child, ctk.CTkButton):
-                        child.configure(text="Actualizado", fg_color="#185018", hover_color="#185018")
-                    elif isinstance(child, ctk.CTkFrame):
-                         for subr in getattr(child, "winfo_children", lambda:[])():
-                             for lbl in getattr(subr, "winfo_children", lambda:[])():
-                                 if isinstance(lbl, ctk.CTkLabel):
-                                     if getattr(lbl, "_text", "") == "Controlador Ausente":
-                                         lbl.configure(text="Correcto", text_color="#00cc00")
-            if do_restart:
-                import threading
-                threading.Thread(target=self._trigger_windows_restart, daemon=True).start()
-            else:
-                self.btn_huge_scan.configure(state="normal", text="Completado")
+        if proc:
+            self.after(0, lambda: self._complete_update_pro())
         else:
-            self.btn_huge_scan.configure(state="normal", text="Reintentar Módulo")
+            self.after(0, lambda: self.lbl_scan_desc.configure(text="Error al iniciar la actualización."))
+
+    def _complete_update_pro(self):
+        self.progress.stop()
+        self.progress.set(1)
+        self.lbl_status_main.configure(text="¡Actualización iniciada en segundo plano con éxito!", text_color="#00dd00")
+        self.btn_huge_scan.configure(state="disabled", text="Completado")
+        self.prog_panel.pack_forget()
 
     def _trigger_windows_restart(self):
         import time, os, ctypes
