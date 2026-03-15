@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.7.6"
+CURRENT_VERSION = "2.7.7"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -1987,39 +1987,6 @@ if __name__ == "__main__":
             creationflags=0x08000000
         ).wait()
         sys.exit(0)
-        
-    # Preguntar por instalación/autoinicio si es ejecutable
-    if getattr(sys, 'frozen', False):
-        import winreg
-        try:
-            import win32com.client
-            desktop = os.path.join(os.environ['USERPROFILE'], 'Desktop')
-            shortcut_path = os.path.join(desktop, "YKZ OPTI.lnk")
-            
-            # Si el acceso directo no existe, preguntamos "Queremos instalar?"
-            if not os.path.exists(shortcut_path):
-                # MB_YESNO (4) | MB_ICONQUESTION (32)
-                res = ctypes.windll.user32.MessageBoxW(0, "¿Deseas instalar YKZ OPTI en el Escritorio y hacer que inicie automáticamente con Windows?", "YKZ", 36)
-                if res == 6:  # IDYES
-                    # Crear Shortcut
-                    try:
-                        shell = win32com.client.Dispatch("WScript.Shell")
-                        shortcut = shell.CreateShortCut(shortcut_path)
-                        shortcut.Targetpath = sys.executable
-                        shortcut.WorkingDirectory = os.path.dirname(sys.executable)
-                        shortcut.save()
-                    except Exception as e:
-                        logging.error(f"Error creando acceso directo: {e}")
-                        
-                    # Añadir a Inicio (HKCU Run)
-                    try:
-                        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
-                        winreg.SetValueEx(key, "YKZ_OPTI", 0, winreg.REG_SZ, f'"{sys.executable}"')
-                        winreg.CloseKey(key)
-                    except Exception as e:
-                        logging.error(f"Error añadiendo startup key: {e}")
-        except Exception as e:
-            logging.error(f"Installation prompt error: {e}")
         
     app = PurpleApp()
     app.mainloop()
