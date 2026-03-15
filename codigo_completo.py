@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.7.7"
+CURRENT_VERSION = "2.8.0"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -1481,7 +1481,7 @@ class PurpleApp(ctk.CTk):
         def _check():
             try:
                 logging.info(f"Checking update from {UPDATE_JSON_URL}")
-                with urllib.request.urlopen(UPDATE_JSON_URL, timeout=5) as url:
+                with urllib.request.urlopen(UPDATE_JSON_URL, timeout=15) as url:
                     data = json.loads(url.read().decode())
                 remote_ver = data.get("version", "0.0.0")
                 exe_url = data.get("url", "")
@@ -1525,7 +1525,7 @@ class PurpleApp(ctk.CTk):
 
                 # Descargar el nuevo exe en Temp
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=60) as response, open(new_exe_path, 'wb') as f_out:
+                with urllib.request.urlopen(req, timeout=15) as response, open(new_exe_path, 'wb') as f_out:
                     f_out.write(response.read())
 
                 # Script PowerShell que espera a que el proceso muera y reemplaza el exe con permisos admin
