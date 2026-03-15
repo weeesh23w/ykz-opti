@@ -1513,46 +1513,45 @@ class PurpleApp(ctk.CTk):
         def _download_and_update():
             try:
                 self.after(0, lambda: messagebox.showinfo("Actualizando", "Descargando actualización...\nLa aplicación se reiniciará automáticamente."))
-                import tempfile, shutil, subprocess
+                import tempfile, subprocess, ctypes
 
                 if not getattr(sys, 'frozen', False):
                     self.after(0, lambda: messagebox.showerror("Error", "Actualiza usando el .exe compilado, no el .py."))
                     return
 
                 exe_path = sys.executable
-                # Descargamos en %TEMP% para evitar bloqueos de permisos
                 tmp_dir = tempfile.gettempdir()
                 new_exe_path = os.path.join(tmp_dir, "YKZ_Optimizer_update.exe")
 
+                # Descargar el nuevo exe en Temp
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=60) as response, open(new_exe_path, 'wb') as f_out:
                     f_out.write(response.read())
 
-                # Bat que se ejecuta DESPUÉS de que el proceso muere
-                bat_path = os.path.join(tmp_dir, "ykz_update.bat")
+                # Script PowerShell que espera a que el proceso muera y reemplaza el exe con permisos admin
+                ps_path = os.path.join(tmp_dir, "ykz_update.ps1")
                 exe_name = os.path.basename(exe_path)
-                with open(bat_path, "w", encoding="ascii") as f:
-                    f.write(f'@echo off\n')
-                    f.write(f'title YKZ Updater\n')
-                    f.write(f':wait\n')
-                    f.write(f'tasklist /FI "IMAGENAME eq {exe_name}" 2>NUL | find /I "{exe_name}" >NUL\n')
-                    f.write(f'if not errorlevel 1 (\n')
-                    f.write(f'  timeout /t 1 /nobreak >NUL\n')
-                    f.write(f'  goto wait\n')
-                    f.write(f')\n')
-                    f.write(f'move /y "{new_exe_path}" "{exe_path}"\n')
-                    f.write(f'start "" "{exe_path}"\n')
-                    f.write(f'del "%~f0"\n')
+                ps_script = (
+                    f"$n = '{exe_name}'\n"
+                    f"$src = '{new_exe_path}'\n"
+                    f"$dst = '{exe_path}'\n"
+                    f"while (Get-Process -Name ($n -replace '\\.exe$','') -ErrorAction SilentlyContinue) {{ Start-Sleep -Seconds 1 }}\n"
+                    f"Start-Sleep -Seconds 1\n"
+                    f"Move-Item -Force -Path $src -Destination $dst\n"
+                    f"Start-Process $dst\n"
+                )
+                with open(ps_path, "w", encoding="utf-8") as f:
+                    f.write(ps_script)
 
-                # Lanzar el bat completamente desvinculado (sin herencia de handles)
-                DETACHED_PROCESS = 0x00000008
-                subprocess.Popen(
-                    ["cmd.exe", "/c", bat_path],
-                    creationflags=DETACHED_PROCESS | 0x08000000,
-                    close_fds=True
+                # Lanzar el PowerShell con runas (admin) desvinculado del proceso actual
+                ctypes.windll.shell32.ShellExecuteW(
+                    None, "runas",
+                    "powershell.exe",
+                    f'-NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "{ps_path}"',
+                    None, 0
                 )
 
-                # Matar el proceso inmediatamente para liberar el .exe
+                # Matar el proceso inmediatamente
                 os._exit(0)
 
             except Exception as e:
@@ -1560,6 +1559,7 @@ class PurpleApp(ctk.CTk):
                 self.after(0, lambda: messagebox.showerror("Error de Actualización", f"Fallo al actualizar:\n{e}"))
 
         threading.Thread(target=_download_and_update, daemon=True).start()
+
 
 
     def show_main(self):
