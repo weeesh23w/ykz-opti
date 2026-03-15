@@ -1528,34 +1528,30 @@ class PurpleApp(ctk.CTk):
                 with urllib.request.urlopen(req, timeout=30) as response, open(new_exe_path, 'wb') as f_out:
                     f_out.write(response.read())
 
-                # Script BAT para reemplazar el archivo mientras está cerrado
-                bat_path = os.path.join(tempfile.gettempdir(), "update_ykz.bat")
-                with open(bat_path, "w") as f:
-                    f.write(f'''@echo off
-title YKZ Update Assistant
-echo Actualizando, por favor espere...
-set _MEIPASS2=
-set _MEIPASS=
-timeout /t 3 /nobreak > NUL
-taskkill /F /IM "{os.path.basename(exe_path)}" /T > NUL 2>&1
-timeout /t 2 /nobreak > NUL
-move /y "{new_exe_path}" "{exe_path}"
-start "" "{exe_path}"
-del "%~f0"
-''')
+                # Reemplazo del archivo in-python usando rename seguro (Windows lo permite)
+                old_exe_path = exe_path + ".old"
+                if os.path.exists(old_exe_path):
+                    try: os.remove(old_exe_path)
+                    except: pass
                 
-                # Ejecutar el .bat de forma silenciosa e independiente
+                os.rename(exe_path, old_exe_path)
+                
+                import shutil
+                shutil.move(new_exe_path, exe_path)
+
+                # Limpiar cualquier rastro de entorno de PyInstaller para el subproceso
                 import subprocess
                 env = os.environ.copy()
                 for k in list(env.keys()):
                     if 'MEIPASS' in k.upper():
                         env.pop(k, None)
                 
-                subprocess.Popen(["cmd.exe", "/c", bat_path], creationflags=0x08000000, env=env)
+                # Ejecutar el nuevo ejecutable recién renombrado, desvinculado
+                subprocess.Popen([exe_path], creationflags=0x08000000, env=env)
                 
-                # Forzar el cierre de la aplicacion de forma LIMPIA (asi Pyinstaller limpia el _MEI temp 
-                # y no salta el error "Failed to load Python DLL" al ser deleteado)
-                self.after(500, self.destroy)
+                # Terminación bruta! (Evita que el bootloader borre el _MEI temp actual, 
+                # así el nuevo proceso nunca fallará al cargar python311.dll ni colapsará)
+                os._exit(0)
 
             except Exception as e:
                 logging.error(f"Update error: {e}")
