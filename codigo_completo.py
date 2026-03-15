@@ -123,6 +123,14 @@ LANG = {
         "opt_c13_t": "Prioridad CPU", "opt_c13_d": "Prioriza juegos frente a procesos del sistema.",
         "amd_c4_t": "Opti Latencia", "amd_c4_d": "Ajusta FlipQueueSize para menor input lag.",
         "btn_run": "EJECUTAR",
+        "nav_laptop": "💻  Rendimiento Laptop",
+        "laptop_title": "RENDIMIENTO DE LAPTOP",
+        "laptop_c1_t": "Alto Rendimiento", "laptop_c1_d": "Fuerza la CPU al 100% sin throttling de batería.",
+        "laptop_c2_t": "Boost Batería", "laptop_c2_d": "Elimina límites de energía en perfil de batería.",
+        "laptop_c3_t": "GPU Laptop Boost", "laptop_c3_d": "Prioriza GPU dedicada y desactiva ahorro pcie.",
+        "laptop_c4_t": "Optimizar RAM", "laptop_c4_d": "Agresiva limpieza de procesos en segundo plano.",
+        "laptop_c5_t": "Anti-Thermal", "laptop_c5_d": "Ajusta ventilación y mitigate thermal throttling.",
+        "laptop_c6_t": "WiFi Boost", "laptop_c6_d": "Evita suspensión del adaptador WiFi para baja latencia.",
         "lang_opt": "Español"
     },
     "EN": {
@@ -202,6 +210,14 @@ LANG = {
         "rep_c5_t": "Repair Update", "rep_c5_d": "Resets Windows Update components.",
         "rep_c6_t": "Fix Icons", "rep_c6_d": "Rebuilds Windows icon cache.",
         "btn_run": "RUN",
+        "nav_laptop": "💻  Laptop Perf.",
+        "laptop_title": "LAPTOP PERFORMANCE",
+        "laptop_c1_t": "High Performance", "laptop_c1_d": "Forces CPU to 100% without battery throttling.",
+        "laptop_c2_t": "Battery Boost", "laptop_c2_d": "Removes power limits on battery profile.",
+        "laptop_c3_t": "Laptop GPU Boost", "laptop_c3_d": "Prioritizes dedicated GPU and disables pcie savings.",
+        "laptop_c4_t": "RAM Optimize", "laptop_c4_d": "Aggressive background process cleanup.",
+        "laptop_c5_t": "Anti-Thermal", "laptop_c5_d": "Adjusts cooling to mitigate thermal throttling.",
+        "laptop_c6_t": "WiFi Boost", "laptop_c6_d": "Prevents WiFi adapter suspension for low latency.",
         "lang_opt": "English"
     }
 }
@@ -400,6 +416,13 @@ def get_app_path():
     if getattr(sys, 'frozen', False):
         return os.path.dirname(sys.executable)
     return os.path.dirname(os.path.abspath(__file__))
+
+def is_laptop():
+    try:
+        import psutil
+        return psutil.sensors_battery() is not None
+    except Exception:
+        return False
 
 import tempfile
 log_file = os.path.join(tempfile.gettempdir(), "debug_smart.txt")
@@ -778,6 +801,39 @@ class OptimizationView(BaseCommandView):
             r'reg add "HKLM\SYSTEM\CurrentControlSet\Control\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f'
         ]
         self.run_cmd(cmds, "Prioridad de ráfagas CPU ajustada para aplicaciones en primer plano.")
+
+class LaptopView(BaseCommandView):
+    def __init__(self, master):
+        super().__init__(master, "RENDIMIENTO DE LAPTOP")
+        self.create_card(0, 0, "🔋", "Alto Rendimiento", "Fuerza la CPU al 100% sin throttling de batería.", self.high_perf)
+        self.create_card(0, 1, "⚡", "Boost Batería", "Elimina límites de energía en perfil de batería.", self.power_limits)
+        self.create_card(1, 0, "🎮", "GPU Laptop Boost", "Prioriza GPU dedicada y desactiva ahorro pcie.", self.gpu_boost)
+        self.create_card(1, 1, "🧹", "Optimizar RAM", "Agresiva limpieza de procesos en segundo plano.", self.ram_opt)
+        self.create_card(2, 0, "🌡️", "Anti-Thermal", "Ajusta ventilación y mitigate thermal throttling.", self.anti_thermal)
+        self.create_card(2, 1, "📶", "WiFi Boost", "Evita suspensión del adaptador WiFi para baja latencia.", self.wifi_boost)
+
+    def high_perf(self):
+        self.run_cmd(['powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'], "Modo Alto Rendimiento Activado.")
+
+    def power_limits(self):
+        cmds = ['powercfg -setdcvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100', 'powercfg -setdcvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100']
+        self.run_cmd(cmds, "Throttle de procesador desactivado en batería.")
+
+    def gpu_boost(self):
+        cmds = [r'reg add "HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" /v HwSchMode /t REG_DWORD /d 2 /f', 'powercfg -setacvalueindex SCHEME_CURRENT 501a4d13-42af-4429-9fd1-a8218c268e20 ee12f906-d277-404b-b6da-e5fa1a576df5 1']
+        self.run_cmd(cmds, "Ajustes de GPU dedicada aplicados.")
+
+    def ram_opt(self):
+        cmds = [r'reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v ClearPageFileAtShutdown /t REG_DWORD /d 1 /f']
+        self.run_cmd(cmds, "Limpieza de RAM ajustada.")
+
+    def anti_thermal(self):
+        cmds = ['powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR SYSCOOLPOL 1', 'powercfg -setdcvalueindex SCHEME_CURRENT SUB_PROCESSOR SYSCOOLPOL 1']
+        self.run_cmd(cmds, "Política de enfriamiento del sistema activa.")
+
+    def wifi_boost(self):
+        cmds = [r'reg add "HKLM\System\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /v TcpAckFrequency /t REG_DWORD /d 1 /f', r'reg add "HKLM\System\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /v TCPNoDelay /t REG_DWORD /d 1 /f']
+        self.run_cmd(cmds, "Latencia WiFi ajustada para juegos.")
 
 class PowerPlanView(BaseCommandView):
     def __init__(self, master):
@@ -1477,18 +1533,21 @@ class PurpleApp(ctk.CTk):
                 with open(bat_path, "w") as f:
                     f.write(f'''@echo off
 title YKZ Update Assistant
-echo Espere a que se complete la actualizacion...
-timeout /t 6 /nobreak > NUL
+echo Actualizando, por favor espere...
+timeout /t 3 /nobreak > NUL
 taskkill /F /IM "{os.path.basename(exe_path)}" /T > NUL 2>&1
+timeout /t 2 /nobreak > NUL
 move /y "{new_exe_path}" "{exe_path}"
 start "" "{exe_path}"
 del "%~f0"
 ''')
                 
-                # Ejecutar el .bat de forma silenciosa y cerrar esta app
-                subprocess.Popen(["cmd.exe", "/c", bat_path], creationflags=0x08000000)
+                # Ejecutar el .bat de forma silenciosa e independiente
+                import ctypes
+                # SW_HIDE = 0. Ocultar completamente la ventana de consola cmd
+                ctypes.windll.shell32.ShellExecuteW(None, "open", bat_path, "", None, 0)
                 
-                # Forzar el cierre de la aplicación actual para liberar el archivo .exe
+                # Forzar el cierre de la aplicación actual 
                 os._exit(0)
 
             except Exception as e:
@@ -1516,6 +1575,8 @@ del "%~f0"
         
         self.btn_home = self.create_nav_btn(LANG[self.current_lang]["nav_home"], self.show_home)
         self.btn_opti = self.create_nav_btn(LANG[self.current_lang]["nav_opti"], self.show_opti)
+        if is_laptop():
+            self.btn_laptop = self.create_nav_btn(LANG[self.current_lang]["nav_laptop"], self.show_laptop)
         self.btn_nvidia = self.create_nav_btn(LANG[self.current_lang]["nav_nvidia"], self.show_nvidia)
         self.btn_amd = self.create_nav_btn(LANG[self.current_lang]["nav_amd"], self.show_amd)
         self.btn_cleaning = self.create_nav_btn(LANG[self.current_lang]["nav_cleaning"], self.show_cleaning)
@@ -1543,6 +1604,8 @@ del "%~f0"
         self.setup_home_grid()
         
         self.view_opti = OptimizationView(self.main_area)
+        if is_laptop():
+            self.view_laptop = LaptopView(self.main_area)
         self.view_nvidia = NvidiaView(self.main_area)
         self.view_amd = AmdView(self.main_area)
         self.view_cleaning = CleaningView(self.main_area)
@@ -1559,6 +1622,7 @@ del "%~f0"
         
         self.btn_home.configure(text=l["nav_home"])
         self.btn_opti.configure(text=l["nav_opti"])
+        if hasattr(self, 'btn_laptop'): self.btn_laptop.configure(text=l["nav_laptop"])
         self.btn_nvidia.configure(text=l["nav_nvidia"])
         self.btn_amd.configure(text=l["nav_amd"])
         self.btn_cleaning.configure(text=l["nav_cleaning"])
@@ -1586,6 +1650,13 @@ del "%~f0"
                 (l["opti_c7_t"], l["opti_c7_d"]), (l["opti_c8_t"], l["opti_c8_d"]),
                 (l["opti_c9_t"], l["opti_c9_d"])
             ], l["btn_activar"])
+
+            if hasattr(self, 'view_laptop'):
+                self.view_laptop.update_texts(l["laptop_title"], [
+                    (l["laptop_c1_t"], l["laptop_c1_d"]), (l["laptop_c2_t"], l["laptop_c2_d"]),
+                    (l["laptop_c3_t"], l["laptop_c3_d"]), (l["laptop_c4_t"], l["laptop_c4_d"]),
+                    (l["laptop_c5_t"], l["laptop_c5_d"]), (l["laptop_c6_t"], l["laptop_c6_d"])
+                ], l["btn_activar"])
 
         if hasattr(self, 'view_power'):
             self.view_power.update_texts("PLAN DE ENERGÍA", [
@@ -1653,6 +1724,13 @@ del "%~f0"
         if hasattr(self, 'lbl_logo'):
             self.lbl_logo.pack_forget()
 
+    def show_laptop(self):
+        self._hide_all_views()
+        self.view_laptop.pack(fill="both", expand=True)
+        self._update_nav(self.btn_laptop)
+        if hasattr(self, 'lbl_logo'):
+            self.lbl_logo.pack_forget()
+
     def show_nvidia(self):
         self._hide_all_views()
         self.view_nvidia.pack(fill="both", expand=True)
@@ -1705,6 +1783,7 @@ del "%~f0"
     def _hide_all_views(self):
         self.view_home.pack_forget()
         self.view_opti.pack_forget()
+        if hasattr(self, 'view_laptop'): self.view_laptop.pack_forget()
         self.view_nvidia.pack_forget()
         self.view_amd.pack_forget()
         self.view_cleaning.pack_forget()
@@ -1716,6 +1795,7 @@ del "%~f0"
     def _update_nav(self, active_btn):
         self.btn_home.configure(fg_color="transparent")
         self.btn_opti.configure(fg_color="transparent")
+        if hasattr(self, 'btn_laptop'): self.btn_laptop.configure(fg_color="transparent")
         self.btn_nvidia.configure(fg_color="transparent")
         self.btn_amd.configure(fg_color="transparent")
         self.btn_cleaning.configure(fg_color="transparent")
