@@ -1534,6 +1534,8 @@ class PurpleApp(ctk.CTk):
                     f.write(f'''@echo off
 title YKZ Update Assistant
 echo Actualizando, por favor espere...
+set _MEIPASS2=
+set _MEIPASS=
 timeout /t 3 /nobreak > NUL
 taskkill /F /IM "{os.path.basename(exe_path)}" /T > NUL 2>&1
 timeout /t 2 /nobreak > NUL
@@ -1545,8 +1547,10 @@ del "%~f0"
                 # Ejecutar el .bat de forma silenciosa e independiente
                 import subprocess
                 env = os.environ.copy()
-                env.pop('_MEIPASS2', None)
-                env.pop('_MEIPASS', None)
+                for k in list(env.keys()):
+                    if 'MEIPASS' in k.upper():
+                        env.pop(k, None)
+                
                 subprocess.Popen(["cmd.exe", "/c", bat_path], creationflags=0x08000000, env=env)
                 
                 # Forzar el cierre de la aplicacion de forma LIMPIA (asi Pyinstaller limpia el _MEI temp 
