@@ -1512,52 +1512,55 @@ class PurpleApp(ctk.CTk):
     def perform_update(self, url):
         def _download_and_update():
             try:
-                self.after(0, lambda: messagebox.showinfo("Actualizando", "Descargando actualización, la aplicación se reiniciará en unos segundos..."))
-                import tempfile
-                
-                # Si estamos en el .exe, hacemos el reemplazo. Si estamos en Python directo, mostrar error.
+                self.after(0, lambda: messagebox.showinfo("Actualizando", "Descargando actualización...\nLa aplicación se reiniciará automáticamente."))
+                import tempfile, shutil, subprocess
+
                 if not getattr(sys, 'frozen', False):
-                    self.after(0, lambda: messagebox.showerror("Error", "No se puede actualizar ejecutando el código fuente (.py). Utiliza la versión compilada (.exe)."))
+                    self.after(0, lambda: messagebox.showerror("Error", "Actualiza usando el .exe compilado, no el .py."))
                     return
-                    
+
                 exe_path = sys.executable
-                new_exe_path = exe_path + ".new"
-                
-                # Descargar nuevo ejecutable
-                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-                with urllib.request.urlopen(req, timeout=30) as response, open(new_exe_path, 'wb') as f_out:
+                # Descargamos en %TEMP% para evitar bloqueos de permisos
+                tmp_dir = tempfile.gettempdir()
+                new_exe_path = os.path.join(tmp_dir, "YKZ_Optimizer_update.exe")
+
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=60) as response, open(new_exe_path, 'wb') as f_out:
                     f_out.write(response.read())
 
-                # Reemplazo del archivo in-python usando rename seguro (Windows lo permite)
-                old_exe_path = exe_path + ".old"
-                if os.path.exists(old_exe_path):
-                    try: os.remove(old_exe_path)
-                    except: pass
-                
-                os.rename(exe_path, old_exe_path)
-                
-                import shutil
-                shutil.move(new_exe_path, exe_path)
+                # Bat que se ejecuta DESPUÉS de que el proceso muere
+                bat_path = os.path.join(tmp_dir, "ykz_update.bat")
+                exe_name = os.path.basename(exe_path)
+                with open(bat_path, "w", encoding="ascii") as f:
+                    f.write(f'@echo off\n')
+                    f.write(f'title YKZ Updater\n')
+                    f.write(f':wait\n')
+                    f.write(f'tasklist /FI "IMAGENAME eq {exe_name}" 2>NUL | find /I "{exe_name}" >NUL\n')
+                    f.write(f'if not errorlevel 1 (\n')
+                    f.write(f'  timeout /t 1 /nobreak >NUL\n')
+                    f.write(f'  goto wait\n')
+                    f.write(f')\n')
+                    f.write(f'move /y "{new_exe_path}" "{exe_path}"\n')
+                    f.write(f'start "" "{exe_path}"\n')
+                    f.write(f'del "%~f0"\n')
 
-                # Limpiar cualquier rastro de entorno de PyInstaller para el subproceso
-                import subprocess
-                env = os.environ.copy()
-                for k in list(env.keys()):
-                    if 'MEIPASS' in k.upper():
-                        env.pop(k, None)
-                
-                # Ejecutar el nuevo ejecutable recién renombrado, desvinculado
-                subprocess.Popen([exe_path], creationflags=0x08000000, env=env)
-                
-                # Terminación bruta! (Evita que el bootloader borre el _MEI temp actual, 
-                # así el nuevo proceso nunca fallará al cargar python311.dll ni colapsará)
+                # Lanzar el bat completamente desvinculado (sin herencia de handles)
+                DETACHED_PROCESS = 0x00000008
+                subprocess.Popen(
+                    ["cmd.exe", "/c", bat_path],
+                    creationflags=DETACHED_PROCESS | 0x08000000,
+                    close_fds=True
+                )
+
+                # Matar el proceso inmediatamente para liberar el .exe
                 os._exit(0)
 
             except Exception as e:
                 logging.error(f"Update error: {e}")
-                self.after(0, lambda: messagebox.showerror("Error de Actualización", f"Fallo al actualizar: {e}"))
+                self.after(0, lambda: messagebox.showerror("Error de Actualización", f"Fallo al actualizar:\n{e}"))
 
         threading.Thread(target=_download_and_update, daemon=True).start()
+
 
     def show_main(self):
         self.deiconify()
