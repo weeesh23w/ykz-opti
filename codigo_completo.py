@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.8.1"
+CURRENT_VERSION = "2.8.2"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -1512,52 +1512,49 @@ class PurpleApp(ctk.CTk):
     def perform_update(self, url):
         def _download_and_update():
             try:
-                self.after(0, lambda: messagebox.showinfo("Actualizando", "Descargando actualización...\nEsto puede tardar unos segundos según tu conexión."))
-                import tempfile, subprocess, ctypes
+                self.after(0, lambda: messagebox.showinfo("Actualizando", "Iniciando descarga de la versión 2.8.2.\n\nPor favor, espera a que el programa se cierre solo (puede tardar un minuto)."))
+                import tempfile, ctypes
 
                 if not getattr(sys, 'frozen', False):
-                    self.after(0, lambda: messagebox.showerror("Error", "Actualiza usando el .exe compilado."))
+                    self.after(0, lambda: messagebox.showerror("Error", "Usa la versión .exe."))
                     return
 
                 exe_path = sys.executable
                 tmp_dir = tempfile.gettempdir()
-                new_exe_path = os.path.join(tmp_dir, "YKZ_Optimizer_new.exe")
+                new_exe_path = os.path.join(tmp_dir, "YKZ_Final.exe")
 
-                # Descargar con timeout alto para el archivo grande
-                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-                with urllib.request.urlopen(req, timeout=120) as response, open(new_exe_path, 'wb') as f_out:
-                    f_out.write(response.read())
+                # Descarga nativa de Windows (sin timeouts arbitrarios de Python)
+                res = ctypes.windll.urlmon.URLDownloadToFileW(None, url, new_exe_path, 0, None)
+                if res != 0:
+                    raise Exception(f"Código de error: {res}")
 
-                # Script PowerShell mejorado: Espera max 10s, si no cierra por la fuerza y reemplaza
-                ps_path = os.path.join(tmp_dir, "ykz_fin.ps1")
+                # Script de reemplazo ultra-agresivo
+                ps_path = os.path.join(tmp_dir, "ykz_install.ps1")
                 exe_name = os.path.basename(exe_path)
                 p_name = exe_name.replace(".exe", "")
-                ps_script = (
-                    f"Stop-Service -Name '{p_name}' -ErrorAction SilentlyContinue\n"
-                    f"$limit = 10; while ((Get-Process -Name '{p_name}' -ErrorAction SilentlyContinue) -and ($limit -gt 0)) {{ Start-Sleep -Seconds 1; $limit-- }}\n"
-                    f"Stop-Process -Name '{p_name}' -Force -ErrorAction SilentlyContinue\n"
+                
+                script = (
                     f"Start-Sleep -Seconds 1\n"
-                    f"Move-Item -Force -Path '{new_exe_path}' -Destination '{exe_path}'\n"
+                    f"Get-Process -Name '{p_name}' -ErrorAction SilentlyContinue | Stop-Process -Force\n"
+                    f"Start-Sleep -Seconds 1\n"
+                    f"Move-Item -Path '{new_exe_path}' -Destination '{exe_path}' -Force\n"
                     f"Start-Process '{exe_path}'\n"
                 )
-                with open(ps_path, "w", encoding="utf-8") as f:
-                    f.write(ps_script)
-
-                # Notificar éxito y lanzar PowerShell con privilegios
-                self.after(0, lambda: messagebox.showinfo("Éxito", "Descarga completada. El programa se reiniciará ahora."))
                 
-                ctypes.windll.shell32.ShellExecuteW(
-                    None, "runas", "powershell.exe",
-                    f'-NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "{ps_path}"',
-                    None, 0
-                )
-                os._exit(0)
+                with open(ps_path, "w", encoding="utf-8") as f:
+                    f.write(script)
 
+                # Ejecutar como admin para tener permisos de escritura en Escritorio/Program Files
+                ctypes.windll.shell32.ShellExecuteW(None, "runas", "powershell.exe", 
+                    f"-WindowStyle Hidden -ExecutionPolicy Bypass -File \"{ps_path}\"", None, 0)
+                
+                os._exit(0)
             except Exception as e:
                 logging.error(f"Update error: {e}")
-                self.after(0, lambda: messagebox.showerror("Error", f"Fallo al descargar:\n{e}"))
+                self.after(0, lambda: messagebox.showerror("Error de Actualización", f"No se pudo completar la descarga:\n{e}"))
 
         threading.Thread(target=_download_and_update, daemon=True).start()
+
 
 
 
