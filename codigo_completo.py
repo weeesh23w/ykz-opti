@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.8.4"
+CURRENT_VERSION = "2.8.5"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -867,6 +867,8 @@ class NvidiaView(BaseCommandView):
         self.create_card(0, 0, "🟢", "Configuración Pura", "Boost de relojes y baja latencia.", self.optimize_nvidia, color=COLOR_ACCENT)
         self.create_card(0, 1, "📬", "MSI Mode", "Forzar interrupciones por mensaje (MSI) para la GPU.", self.msi_mode, color=COLOR_ACCENT)
         self.create_card(1, 0, "🧹", "Limpiador Driver", "Limpia telemetría y bloquea logs de NVIDIA.", self.clean_nvidia, color=COLOR_ACCENT)
+        self.create_card(1, 1, "🔇", "Desactivar HD Audio", "Desactiva audio por HDMI para reducir latencia DPC.", self.disable_hd_audio, color=COLOR_ACCENT)
+        self.create_card(2, 0, "⚡", "Prioridad IRQ GPU", "Asigna máxima prioridad de interrupción a la gráfica.", self.gpu_priority_irq, color=COLOR_ACCENT)
 
     def optimize_nvidia(self):
         cmds = [
@@ -891,6 +893,20 @@ class NvidiaView(BaseCommandView):
         ]
         self.run_cmd(cmds, "Telemetría de NVIDIA eliminada.")
 
+    def disable_hd_audio(self):
+        cmds = [
+            "Get-PnpDevice -Class Media -FriendlyName '*NVIDIA High Definition Audio*' -ErrorAction SilentlyContinue | Disable-PnpDevice -Confirm:$false",
+            "Get-PnpDevice -Class Media -FriendlyName '*NVIDIA Virtual Audio Device*' -ErrorAction SilentlyContinue | Disable-PnpDevice -Confirm:$false"
+        ]
+        self.run_cmd(cmds, "NVIDIA HD Audio desactivado.")
+
+    def gpu_priority_irq(self):
+        cmds = [
+            '$gpus = Get-PnpDevice -Class Display -Status OK | Where-Object { $_.Manufacturer -like "*NVIDIA*" }',
+            'foreach ($gpu in $gpus) { $path = "HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\$($gpu.DeviceID)\\Device Parameters\\Interrupt Management\\Affinity Policy"; if (!(Test-Path $path)) { New-Item -Path $path -Force }; Set-ItemProperty -Path $path -Name "DevicePriority" -Value 3 -Type DWord }'
+        ]
+        self.run_cmd(cmds, "Prioridad de interrupción de GPU establecida a Alta.")
+
 class AmdView(BaseCommandView):
     def __init__(self, master):
         super().__init__(master, "AMD ADRENALINE CENTER")
@@ -898,6 +914,9 @@ class AmdView(BaseCommandView):
         self.create_card(0, 1, "📦", "Caché de Sombras", "Fuerza caché de shaders encendida (reduce tirones).", self.shader_cache, color=COLOR_DANGER)
         self.create_card(1, 0, "📬", "MSI Mode AMD", "Fuerza interrupciones MSI para tarjetas gráficas AMD.", self.msi_mode_amd, color=COLOR_DANGER)
         self.create_card(1, 1, "⚡", "Opti Latencia", "Ajusta FlipQueueSize para menor input lag.", self.amd_latency_tweak, color=COLOR_DANGER)
+        self.create_card(2, 0, "🔇", "Desactivar HD Audio", "Desactiva audio por HDMI para reducir latencia DPC.", self.disable_hd_audio_amd, color=COLOR_DANGER)
+        self.create_card(2, 1, "⚡", "Prioridad IRQ GPU", "Asigna máxima prioridad de interrupción a la gráfica.", self.gpu_priority_irq_amd, color=COLOR_DANGER)
+        self.create_card(3, 0, "🛑", "Apagar AMD Events", "Reduce micro-tirones apagando el servicio de eventos de AMD.", self.disable_amd_events, color=COLOR_DANGER)
 
     def disable_ulps(self):
         cmds = [
@@ -927,6 +946,27 @@ class AmdView(BaseCommandView):
             r'reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0001" /v FlipQueueSize /t REG_BINARY /d 3100 /f'
         ]
         self.run_cmd(cmds, "Optimizaciones de latencia AMD aplicadas.")
+
+    def disable_hd_audio_amd(self):
+        cmds = [
+            "Get-PnpDevice -Class Media -FriendlyName '*AMD High Definition Audio*' -ErrorAction SilentlyContinue | Disable-PnpDevice -Confirm:$false",
+            "Get-PnpDevice -Class Media -FriendlyName '*AMD Streaming Audio Device*' -ErrorAction SilentlyContinue | Disable-PnpDevice -Confirm:$false"
+        ]
+        self.run_cmd(cmds, "AMD HD Audio desactivado.")
+
+    def gpu_priority_irq_amd(self):
+        cmds = [
+            '$gpus = Get-PnpDevice -Class Display -Status OK | Where-Object { $_.Manufacturer -like "*AMD*" -or $_.Manufacturer -like "*ATI*" }',
+            'foreach ($gpu in $gpus) { $path = "HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\$($gpu.DeviceID)\\Device Parameters\\Interrupt Management\\Affinity Policy"; if (!(Test-Path $path)) { New-Item -Path $path -Force }; Set-ItemProperty -Path $path -Name "DevicePriority" -Value 3 -Type DWord }'
+        ]
+        self.run_cmd(cmds, "Prioridad de interrupción de GPU establecida a Alta.")
+
+    def disable_amd_events(self):
+        cmds = [
+            'Stop-Service -Name "AMD External Events Utility" -ErrorAction SilentlyContinue',
+            'Set-Service -Name "AMD External Events Utility" -StartupType Disabled -ErrorAction SilentlyContinue'
+        ]
+        self.run_cmd(cmds, "Servicio AMD External Events desactivado.")
 
 class CleaningView(BaseCommandView):
     def __init__(self, master):
@@ -1083,11 +1123,8 @@ class DriversView(ctk.CTkFrame):
         self.banner = ctk.CTkFrame(self.header_frame, fg_color="#121217", border_width=1, border_color="#333333")
         self.banner.pack(fill="x", expand=True)
         
-        self.lbl_info_icon = ctk.CTkLabel(self.banner, text="🚗", font=("Segoe UI Emoji", 28))
-        self.lbl_info_icon.pack(side="left", padx=(20, 15), pady=20)
-        
         self.lbl_status_main = ctk.CTkLabel(self.banner, text="Haz clic en ESCANEAR AHORA para analizar tu hardware real.", font=("Segoe UI", 16), text_color="white", justify="left")
-        self.lbl_status_main.pack(side="left", pady=15)
+        self.lbl_status_main.pack(side="left", pady=15, padx=(20, 0))
         
         self.btn_huge_scan = ctk.CTkButton(self.banner, text="ESCANEAR AHORA", font=("Segoe UI", 14, "bold"), 
                                             fg_color=self.accent_color, hover_color="#6221cc", text_color="white",
