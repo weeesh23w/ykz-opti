@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.8.5"
+CURRENT_VERSION = "2.8.6"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -131,7 +131,25 @@ LANG = {
         "laptop_c4_t": "Optimizar RAM", "laptop_c4_d": "Agresiva limpieza de procesos en segundo plano.",
         "laptop_c5_t": "Anti-Thermal", "laptop_c5_d": "Ajusta ventilación y mitigate thermal throttling.",
         "laptop_c6_t": "WiFi Boost", "laptop_c6_d": "Evita suspensión del adaptador WiFi para baja latencia.",
-        "lang_opt": "Español"
+                "nav_gaming": "🎮  Gaming Boost",
+        "nav_input": "⌨️  Input Lag",
+        "nav_debloat": "🗑️  Debloater",
+        "nav_security": "🛡️  Seguridad",
+        "gaming_title": "GAME BOOSTERS",
+        "gaming_c1_t": "Valorant / CS2", "gaming_c1_d": "Optimización extrema del motor y red.",
+        "gaming_c2_t": "FiveM Boost", "gaming_c2_d": "Prioridad máxima y limpieza de caché GTA/FiveM.",
+        "gaming_c3_t": "FSO Fix", "gaming_c3_d": "Desactiva Fullscreen Optimizations globalmente.",
+        "gaming_c4_t": "Limpiar RAM (ISLC)", "gaming_c4_d": "Libera la caché en espera instantáneamente.",
+        "input_title": "INPUT LAG EXTREMO",
+        "input_c1_t": "FilterKeys Fix", "input_c1_d": "Elimina el retraso de repetición del teclado.",
+        "input_c2_t": "USB Polling Rate", "input_c2_d": "Fuerza máxima velocidad en puertos USB.",
+        "input_c3_t": "DPC Latency", "input_c3_d": "Ajusta latencia DPC y SystemTimerResolution.",
+        "debloat_title": "WINDOWS DEBLOATER",
+        "debloat_c1_t": "Modo Windows Lite", "debloat_c1_d": "Desactiva todos los servicios pesados ocultos.",
+        "debloat_c2_t": "Quitar Bloatware", "debloat_c2_d": "Elimina apps nativas (TikTok, Xbox, etc).",
+        "sec_title": "SEGURIDAD Y RESPALDO",
+        "sec_c1_t": "Crear Punto", "sec_c1_d": "Crea un Punto de Restauración del Sistema ahora.",
+        "lang_opt": "Español" 
     },
     "EN": {
         "nav_home": "📊  My Components",
@@ -218,6 +236,24 @@ LANG = {
         "laptop_c4_t": "RAM Optimize", "laptop_c4_d": "Aggressive background process cleanup.",
         "laptop_c5_t": "Anti-Thermal", "laptop_c5_d": "Adjusts cooling to mitigate thermal throttling.",
         "laptop_c6_t": "WiFi Boost", "laptop_c6_d": "Prevents WiFi adapter suspension for low latency.",
+                "nav_gaming": "🎮  Gaming Boost",
+        "nav_input": "⌨️  Input Lag",
+        "nav_debloat": "🗑️  Debloater",
+        "nav_security": "🛡️  Security",
+        "gaming_title": "GAME BOOSTERS",
+        "gaming_c1_t": "Valorant / CS2", "gaming_c1_d": "Extreme engine and network optimization.",
+        "gaming_c2_t": "FiveM Boost", "gaming_c2_d": "Max priority and GTA/FiveM cache cleaner.",
+        "gaming_c3_t": "FSO Fix", "gaming_c3_d": "Disables Fullscreen Optimizations globally.",
+        "gaming_c4_t": "Clear RAM (ISLC)", "gaming_c4_d": "Frees standby cache instantly.",
+        "input_title": "EXTREME INPUT LAG",
+        "input_c1_t": "FilterKeys Fix", "input_c1_d": "Removes keyboard repeat delay.",
+        "input_c2_t": "USB Polling Rate", "input_c2_d": "Forces max speed on USB ports.",
+        "input_c3_t": "DPC Latency", "input_c3_d": "Tweaks DPC and SystemTimerResolution.",
+        "debloat_title": "WINDOWS DEBLOATER",
+        "debloat_c1_t": "Windows Lite Mode", "debloat_c1_d": "Disables hidden heavy services.",
+        "debloat_c2_t": "Remove Bloatware", "debloat_c2_d": "Removes native apps (TikTok, Xbox, etc).",
+        "sec_title": "SECURITY & BACKUP",
+        "sec_c1_t": "Create Point", "sec_c1_d": "Creates a System Restore Point immediately." ,
         "lang_opt": "English"
     }
 }
@@ -1422,6 +1458,136 @@ class LoginWindow(ctk.CTkToplevel):
         sys.exit(0)
 
 
+
+class GamingView(BaseCommandView):
+    def __init__(self, master):
+        super().__init__(master, "GAME BOOSTERS")
+        self.create_card(0, 0, "🔫", "Valorant / CS2", "Optimización extrema del motor y red.", self.boost_fps, color=COLOR_ACCENT)
+        self.create_card(0, 1, "🚗", "FiveM Boost", "Prioridad máxima y limpieza de caché GTA/FiveM.", self.boost_fivem, color=COLOR_ACCENT)
+        self.create_card(1, 0, "🖥️", "FSO Fix", "Desactiva Fullscreen Optimizations globalmente.", self.fso_fix, color=COLOR_ACCENT)
+        self.create_card(1, 1, "🧠", "Limpiar RAM (ISLC)", "Libera la caché en espera instantáneamente.", self.clear_ram, color=COLOR_WARNING)
+
+    def boost_fps(self):
+        cmds = [
+            r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f',
+            r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Priority" /t REG_DWORD /d 6 /f',
+            r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f'
+        ]
+        self.run_cmd(cmds, "Optimización de juegos competitivos (Valo/CS2) aplicada.")
+
+    def boost_fivem(self):
+        cmds = [
+            r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FiveM.exe\PerfOptions" /v "CpuPriorityClass" /t REG_DWORD /d 3 /f',
+            r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\GTA5.exe\PerfOptions" /v "CpuPriorityClass" /t REG_DWORD /d 3 /f',
+            'Remove-Item -Path "$env:LOCALAPPDATA\FiveM\FiveM.app\data\cache\*" -Recurse -Force -ErrorAction SilentlyContinue',
+            'Remove-Item -Path "$env:LOCALAPPDATA\FiveM\FiveM.app\data\server-cache\*" -Recurse -Force -ErrorAction SilentlyContinue'
+        ]
+        self.run_cmd(cmds, "FiveM optimizado: Caché borrada y CPU priorizada a Alta.")
+
+    def fso_fix(self):
+        cmds = [
+            r'reg add "HKCU\System\GameConfigStore" /v GameDVR_FSEBehaviorMode /t REG_DWORD /d 2 /f',
+            r'reg add "HKCU\System\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /t REG_DWORD /d 1 /f'
+        ]
+        self.run_cmd(cmds, "Fullscreen Optimizations desactivado globalmente.")
+
+    def clear_ram(self):
+        cmds = [
+            # Uses a built in powershell method to clear working set and standby list
+            '$ErrorActionPreference = "Stop"',
+            '[gc]::Collect()',
+            '[gc]::WaitForPendingFinalizers()',
+            '''
+            $source = @"
+            using System;
+            using System.Runtime.InteropServices;
+            public class MemCleaner {
+                [DllImport("psapi.dll")]
+                static extern int EmptyWorkingSet(IntPtr hwProc);
+                public static void Clear() {
+                    EmptyWorkingSet(System.Diagnostics.Process.GetCurrentProcess().Handle);
+                }
+            }
+"@
+            Add-Type -TypeDefinition $source
+            [MemCleaner]::Clear()
+            '''
+        ]
+        self.run_cmd(cmds, "Caché de memoria RAM limpia (ISLC alternativo).")
+
+class InputLagView(BaseCommandView):
+    def __init__(self, master):
+        super().__init__(master, "INPUT LAG EXTREMO")
+        self.create_card(0, 0, "⌨️", "FilterKeys Fix", "Elimina el retraso de repetición del teclado.", self.filterkeys, color=COLOR_ACCENT)
+        self.create_card(0, 1, "🔌", "USB Polling Rate", "Fuerza máxima velocidad en puertos USB.", self.usb_polling, color=COLOR_ACCENT)
+        self.create_card(1, 0, "⏱️", "DPC Latency", "Ajusta latencia DPC y SystemTimerResolution.", self.dpc_latency, color=COLOR_ACCENT)
+
+    def filterkeys(self):
+        cmds = [
+            r'reg add "HKCU\Control Panel\Accessibility\Keyboard Response" /v AutoRepeatDelay /t REG_SZ /d 200 /f',
+            r'reg add "HKCU\Control Panel\Accessibility\Keyboard Response" /v AutoRepeatRate /t REG_SZ /d 15 /f',
+            r'reg add "HKCU\Control Panel\Accessibility\Keyboard Response" /v DelayBeforeAcceptance /t REG_SZ /d 0 /f',
+            r'reg add "HKCU\Control Panel\Accessibility\Keyboard Response" /v Flags /t REG_SZ /d 59 /f'
+        ]
+        self.run_cmd(cmds, "FilterKeys ajustado para 0ms de retraso de teclado.")
+
+    def usb_polling(self):
+        cmds = [
+            # Disable USB selective suspend
+            r'powercfg -setacvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0',
+            r'powercfg -setdcvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0',
+            r'powercfg -setactive SCHEME_CURRENT'
+        ]
+        self.run_cmd(cmds, "Suspensión de USB desactivada (Máximo Polling Rate ratón/teclado).")
+
+    def dpc_latency(self):
+        cmds = [
+            'bcdedit /set disabledynamictick yes',
+            'bcdedit /set useplatformclock false',
+            'bcdedit /set tscsyncpolicy Enhanced'
+        ]
+        self.run_cmd(cmds, "DPC Latency Fix aplicado (Reinicia el PC para aplicar).")
+
+class DebloatView(BaseCommandView):
+    def __init__(self, master):
+        super().__init__(master, "WINDOWS DEBLOATER")
+        self.create_card(0, 0, "🪶", "Modo Windows Lite", "Desactiva todos los servicios pesados ocultos.", self.windows_lite, color=COLOR_DANGER)
+        self.create_card(0, 1, "🗑️", "Quitar Bloatware", "Elimina apps nativas (TikTok, Xbox, etc).", self.remove_bloatware, color=COLOR_DANGER)
+
+    def windows_lite(self):
+        cmds = [
+            'Set-Service -Name "SysMain" -StartupType Disabled -ErrorAction SilentlyContinue; Stop-Service -Name "SysMain" -Force -ErrorAction SilentlyContinue',
+            'Set-Service -Name "DiagTrack" -StartupType Disabled -ErrorAction SilentlyContinue; Stop-Service -Name "DiagTrack" -Force -ErrorAction SilentlyContinue',
+            'Set-Service -Name "WSearch" -StartupType Disabled -ErrorAction SilentlyContinue; Stop-Service -Name "WSearch" -Force -ErrorAction SilentlyContinue'
+        ]
+        self.run_cmd(cmds, "Modo Windows Lite: Servicios pesados desactivados.")
+
+    def remove_bloatware(self):
+        cmds = [
+            'Get-AppxPackage *TikTok* | Remove-AppxPackage -ErrorAction SilentlyContinue',
+            'Get-AppxPackage *Instagram* | Remove-AppxPackage -ErrorAction SilentlyContinue',
+            'Get-AppxPackage *Facebook* | Remove-AppxPackage -ErrorAction SilentlyContinue',
+            'Get-AppxPackage *SkypeApp* | Remove-AppxPackage -ErrorAction SilentlyContinue',
+            'Get-AppxPackage *ZuneVideo* | Remove-AppxPackage -ErrorAction SilentlyContinue',
+            'Get-AppxPackage *bingweather* | Remove-AppxPackage -ErrorAction SilentlyContinue',
+            'Get-AppxPackage *solitairecollection* | Remove-AppxPackage -ErrorAction SilentlyContinue'
+        ]
+        self.run_cmd(cmds, "Bloatware no deseado eliminado del sistema.")
+
+class SecurityView(BaseCommandView):
+    def __init__(self, master):
+        super().__init__(master, "SEGURIDAD Y RESPALDO")
+        self.create_card(0, 0, "🛡️", "Crear Punto", "Crea un Punto de Restauración del Sistema ahora.", self.restore_point, color=COLOR_SUCCESS)
+
+    def restore_point(self):
+        cmds = [
+            'Enable-ComputerRestore -Drive "C:" -ErrorAction SilentlyContinue',
+            'Checkpoint-Computer -Description "YKZ Opti Manual Backup" -RestorePointType "MODIFY_SETTINGS" -ErrorAction SilentlyContinue'
+        ]
+        self.run_cmd(cmds, "Punto de Restauración 'YKZ Opti Manual Backup' creado con éxito.")
+
+# ==================== End of new views ====================
+
 class PurpleStarsBackground:
     def __init__(self, parent, width=1200, height=700, stars=120):
         self.width = width
@@ -1607,14 +1773,25 @@ class PurpleApp(ctk.CTk):
         self.current_lang = "ES"
         # Fondo animado de estrellas (primero para que quede detrás)
         self.stars_bg = PurpleStarsBackground(self, width=1100, height=700)
-        self.sidebar = ctk.CTkFrame(self, width=200, corner_radius=0, fg_color=COLOR_PANEL)
-        self.sidebar.pack(side="left", fill="y")
+
+        self.sidebar = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color=COLOR_PANEL)
+
         
-        self.lbl_logo = GlitchLogo(self.sidebar, text="YKZ OPTI")
-        self.lbl_logo.pack(pady=30)
+
+        
+        self.nav_frame = ctk.CTkScrollableFrame(self.sidebar, width=220, fg_color="transparent")
+        self.nav_frame.pack(fill="both", expand=True)
+
+
+        
+
         
         self.btn_home = self.create_nav_btn(LANG[self.current_lang]["nav_home"], self.show_home)
         self.btn_opti = self.create_nav_btn(LANG[self.current_lang]["nav_opti"], self.show_opti)
+        self.btn_gaming = self.create_nav_btn(LANG[self.current_lang]["nav_gaming"], self.show_gaming)
+        self.btn_input = self.create_nav_btn(LANG[self.current_lang]["nav_input"], self.show_input)
+        self.btn_debloat = self.create_nav_btn(LANG[self.current_lang]["nav_debloat"], self.show_debloat)
+        self.btn_security = self.create_nav_btn(LANG[self.current_lang]["nav_security"], self.show_security)
         if is_laptop():
             self.btn_laptop = self.create_nav_btn(LANG[self.current_lang]["nav_laptop"], self.show_laptop)
         self.btn_nvidia = self.create_nav_btn(LANG[self.current_lang]["nav_nvidia"], self.show_nvidia)
@@ -1644,6 +1821,10 @@ class PurpleApp(ctk.CTk):
         self.setup_home_grid()
         
         self.view_opti = OptimizationView(self.main_area)
+        self.view_gaming = GamingView(self.main_area)
+        self.view_input = InputLagView(self.main_area)
+        self.view_debloat = DebloatView(self.main_area)
+        self.view_security = SecurityView(self.main_area)
         if is_laptop():
             self.view_laptop = LaptopView(self.main_area)
         self.view_nvidia = NvidiaView(self.main_area)
@@ -1662,6 +1843,10 @@ class PurpleApp(ctk.CTk):
         
         self.btn_home.configure(text=l["nav_home"])
         self.btn_opti.configure(text=l["nav_opti"])
+        self.btn_gaming.configure(text=l["nav_gaming"])
+        self.btn_input.configure(text=l["nav_input"])
+        self.btn_debloat.configure(text=l["nav_debloat"])
+        self.btn_security.configure(text=l["nav_security"])
         if hasattr(self, 'btn_laptop'): self.btn_laptop.configure(text=l["nav_laptop"])
         self.btn_nvidia.configure(text=l["nav_nvidia"])
         self.btn_amd.configure(text=l["nav_amd"])
@@ -1690,6 +1875,29 @@ class PurpleApp(ctk.CTk):
                 (l["opti_c7_t"], l["opti_c7_d"]), (l["opti_c8_t"], l["opti_c8_d"]),
                 (l["opti_c9_t"], l["opti_c9_d"])
             ], l["btn_activar"])
+            
+        if hasattr(self, 'view_gaming'):
+            self.view_gaming.update_texts(l["gaming_title"], [
+                (l["gaming_c1_t"], l["gaming_c1_d"]), (l["gaming_c2_t"], l["gaming_c2_d"]),
+                (l["gaming_c3_t"], l["gaming_c3_d"]), (l["gaming_c4_t"], l["gaming_c4_d"])
+            ], l["btn_activar"])
+
+        if hasattr(self, 'view_input'):
+            self.view_input.update_texts(l["input_title"], [
+                (l["input_c1_t"], l["input_c1_d"]), (l["input_c2_t"], l["input_c2_d"]),
+                (l["input_c3_t"], l["input_c3_d"])
+            ], l["btn_activar"])
+
+        if hasattr(self, 'view_debloat'):
+            self.view_debloat.update_texts(l["debloat_title"], [
+                (l["debloat_c1_t"], l["debloat_c1_d"]), (l["debloat_c2_t"], l["debloat_c2_d"])
+            ], l["btn_activar"])
+
+        if hasattr(self, 'view_security'):
+            self.view_security.update_texts(l["sec_title"], [
+                (l["sec_c1_t"], l["sec_c1_d"])
+            ], l["btn_activar"])
+
 
             if hasattr(self, 'view_laptop'):
                 self.view_laptop.update_texts(l["laptop_title"], [
@@ -1746,7 +1954,7 @@ class PurpleApp(ctk.CTk):
                 self.view_drivers.lbl_sect2.configure(text=l["drv_ok"])
 
     def create_nav_btn(self, text, cmd):
-        btn = ctk.CTkButton(self.sidebar, text=text, fg_color="transparent", hover_color=COLOR_BG, anchor="w", height=40, font=("Roboto", 14), command=cmd)
+        btn = ctk.CTkButton(self.nav_frame, text=text, fg_color="transparent", hover_color=COLOR_BG, anchor="w", height=40, font=("Roboto", 14), command=cmd)
         btn.pack(fill="x", padx=10, pady=5)
         return btn
 
@@ -1763,6 +1971,31 @@ class PurpleApp(ctk.CTk):
         self._update_nav(self.btn_opti)
         if hasattr(self, 'lbl_logo'):
             self.lbl_logo.pack_forget()
+
+
+    def show_gaming(self):
+        self._hide_all_views()
+        self.view_gaming.pack(fill="both", expand=True)
+        self._update_nav(self.btn_gaming)
+        if hasattr(self, 'lbl_logo'): self.lbl_logo.pack_forget()
+        
+    def show_input(self):
+        self._hide_all_views()
+        self.view_input.pack(fill="both", expand=True)
+        self._update_nav(self.btn_input)
+        if hasattr(self, 'lbl_logo'): self.lbl_logo.pack_forget()
+
+    def show_debloat(self):
+        self._hide_all_views()
+        self.view_debloat.pack(fill="both", expand=True)
+        self._update_nav(self.btn_debloat)
+        if hasattr(self, 'lbl_logo'): self.lbl_logo.pack_forget()
+
+    def show_security(self):
+        self._hide_all_views()
+        self.view_security.pack(fill="both", expand=True)
+        self._update_nav(self.btn_security)
+        if hasattr(self, 'lbl_logo'): self.lbl_logo.pack_forget()
 
     def show_laptop(self):
         self._hide_all_views()
@@ -1823,6 +2056,10 @@ class PurpleApp(ctk.CTk):
     def _hide_all_views(self):
         self.view_home.pack_forget()
         self.view_opti.pack_forget()
+        self.view_gaming.pack_forget()
+        self.view_input.pack_forget()
+        self.view_debloat.pack_forget()
+        self.view_security.pack_forget()
         if hasattr(self, 'view_laptop'): self.view_laptop.pack_forget()
         self.view_nvidia.pack_forget()
         self.view_amd.pack_forget()
