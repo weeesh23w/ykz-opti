@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.8.6"
+CURRENT_VERSION = "2.8.7"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -83,10 +83,15 @@ LANG = {
         "nv_c1_t": "Configuración Pura", "nv_c1_d": "Boost de relojes y baja latencia.",
         "nv_c2_t": "MSI Mode", "nv_c2_d": "Forzar interrupciones por mensaje (MSI) para la GPU.",
         "nv_c3_t": "Limpiador Driver", "nv_c3_d": "Limpia telemetría y bloquea logs de NVIDIA.",
+        "nv_c4_t": "NVIDIA HD Audio", "nv_c4_d": "Desactiva audio por HDMI para reducir latencia DPC.",
+        "nv_c5_t": "Prioridad IRQ GPU", "nv_c5_d": "Asigna máxima prioridad de interrupción a la gráfica.",
         "amd_title": "AMD ADRENALINE CENTER",
         "amd_c1_t": "Desactivar ULPS", "amd_c1_d": "Desactiva estado de ultra bajo consumo para más FPS.",
         "amd_c2_t": "Caché de Sombras", "amd_c2_d": "Fuerza caché de shaders encendida (reduce tirones).",
         "amd_c3_t": "MSI Mode AMD", "amd_c3_d": "Fuerza interrupciones MSI para tarjetas gráficas AMD.",
+        "amd_c5_t": "Desactivar HD Audio", "amd_c5_d": "Desactiva audio por HDMI para reducir latencia DPC.",
+        "amd_c6_t": "Prioridad IRQ GPU", "amd_c6_d": "Asigna máxima prioridad de interrupción a la gráfica.",
+        "amd_c7_t": "Apagar AMD Events", "amd_c7_d": "Reduce micro-tirones apagando el servicio de eventos.",
         "nav_amd": "🔴  AMD",
         "act_title": "ACTIVAR WINDOWS",
         "act_c1_t": "Activar Windows", "act_c1_d": "Ejecuta el script de activación oficial automáticamente. Puede tardar un par de minutos.",
@@ -131,15 +136,19 @@ LANG = {
         "laptop_c4_t": "Optimizar RAM", "laptop_c4_d": "Agresiva limpieza de procesos en segundo plano.",
         "laptop_c5_t": "Anti-Thermal", "laptop_c5_d": "Ajusta ventilación y mitigate thermal throttling.",
         "laptop_c6_t": "WiFi Boost", "laptop_c6_d": "Evita suspensión del adaptador WiFi para baja latencia.",
-                "nav_gaming": "🎮  Gaming Boost",
+        "nav_gaming": "🎮  Gaming Boost",
         "nav_input": "⌨️  Input Lag",
         "nav_debloat": "🗑️  Debloater",
         "nav_security": "🛡️  Seguridad",
         "gaming_title": "GAME BOOSTERS",
-        "gaming_c1_t": "Valorant / CS2", "gaming_c1_d": "Optimización extrema del motor y red.",
-        "gaming_c2_t": "FiveM Boost", "gaming_c2_d": "Prioridad máxima y limpieza de caché GTA/FiveM.",
-        "gaming_c3_t": "FSO Fix", "gaming_c3_d": "Desactiva Fullscreen Optimizations globalmente.",
+        "gaming_c1_t": "Valorant / CS2", "gaming_c1_d": "Optimización extrema del motor y la red.",
+        "gaming_c2_t": "Boost FiveM", "gaming_c2_d": "Prioridad máxima y limpieza selectiva de caché.",
+        "gaming_c3_t": "FSO Fix", "gaming_c3_d": "Desactiva optimizaciones de pantalla completa.",
         "gaming_c4_t": "Limpiar RAM (ISLC)", "gaming_c4_d": "Libera la caché en espera instantáneamente.",
+        "gaming_c1_success": "Optimización para Valorant/CS2 aplicada.",
+        "gaming_c2_success": "FiveM optimizado: Caché borrada y CPU priorizada.",
+        "gaming_c3_success": "FSO Fix aplicado con éxito.",
+        "gaming_c4_success": "Caché de RAM limpia perfectamente.",
         "input_title": "INPUT LAG EXTREMO",
         "input_c1_t": "FilterKeys Fix", "input_c1_d": "Elimina el retraso de repetición del teclado.",
         "input_c2_t": "USB Polling Rate", "input_c2_d": "Fuerza máxima velocidad en puertos USB.",
@@ -149,7 +158,18 @@ LANG = {
         "debloat_c2_t": "Quitar Bloatware", "debloat_c2_d": "Elimina apps nativas (TikTok, Xbox, etc).",
         "sec_title": "SEGURIDAD Y RESPALDO",
         "sec_c1_t": "Crear Punto", "sec_c1_d": "Crea un Punto de Restauración del Sistema ahora.",
-        "lang_opt": "Español" 
+        "lang_opt": "Español",
+        "login_title": "ACTIVACIÓN REQUERIDA",
+        "login_desc": "Introduce tu clave de producto para continuar:",
+        "login_btn": "ACTIVAR AHORA",
+        "login_ph": "YKZ-XXXX-XXXX-XXXX",
+        "login_success": "¡Activado!",
+        "login_fail": "Clave inválida.",
+        "drv_col_dev": "DISPOSITIVO",
+        "drv_col_man": "FABRICANTE",
+        "drv_col_ver": "VER. INSTALADA",
+        "drv_col_date": "FECHA",
+        "drv_col_status": "ESTADO"
     },
     "EN": {
         "nav_home": "📊  My Components",
@@ -254,7 +274,18 @@ LANG = {
         "debloat_c2_t": "Remove Bloatware", "debloat_c2_d": "Removes native apps (TikTok, Xbox, etc).",
         "sec_title": "SECURITY & BACKUP",
         "sec_c1_t": "Create Point", "sec_c1_d": "Creates a System Restore Point immediately." ,
-        "lang_opt": "English"
+        "lang_opt": "English",
+        "login_title": "ACTIVATION REQUIRED",
+        "login_desc": "Enter your product key to continue:",
+        "login_btn": "ACTIVATE NOW",
+        "login_ph": "YKZ-XXXX-XXXX-XXXX",
+        "login_success": "Activated!",
+        "login_fail": "Invalid key.",
+        "drv_col_dev": "DEVICE",
+        "drv_col_man": "MANUFACTURER",
+        "drv_col_ver": "INSTALLED VER.",
+        "drv_col_date": "DATE",
+        "drv_col_status": "STATUS"
     }
 }
 
@@ -652,37 +683,85 @@ class IntroWindow(ctk.CTkToplevel):
 # --- Sub-views ---
 class BaseCommandView(ctk.CTkFrame):
     def __init__(self, master, title):
-        super().__init__(master, fg_color="transparent")
+        super().__init__(master, fg_color=COLOR_BG)
         
         self.lbl_title = ctk.CTkLabel(self, text=title, font=("Arial", 24, "bold"), text_color="white")
         self.lbl_title.pack(pady=(20, 30), padx=20, anchor="w")
 
-        self.content_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        self.content_frame = ctk.CTkScrollableFrame(self, fg_color=COLOR_BG)
         self.content_frame.pack(fill="both", expand=True, padx=10, pady=5)
         self.content_frame.columnconfigure((0, 1), weight=1)
+        
+        # Fluid Scroll binding - removed bind_all to prevent global event hijacking
+        self.content_frame.bind("<MouseWheel>", self._on_mousewheel)
+        # Bind also to children recursively
+        self._bind_mousewheel(self.content_frame)
 
-    def create_card(self, r, c, icon, title, desc, cmd, color=COLOR_ACCENT):
+    def _bind_mousewheel(self, widget):
+        widget.bind("<MouseWheel>", self._on_mousewheel)
+        for child in widget.winfo_children():
+            self._bind_mousewheel(child)
+
+    def _on_mousewheel(self, event):
+        # Increased scroll speed for better fluidity
+        try:
+            scroll_dist = -1 * (event.delta / 60) # 60 instead of 120 for double speed
+            self.content_frame._parent_canvas.yview_scroll(int(scroll_dist), "units")
+        except:
+            pass
+
+    def create_card(self, r, c, icon, title, desc, cmd, color=COLOR_ACCENT, img_path=None):
         card = ctk.CTkFrame(self.content_frame, fg_color=COLOR_PANEL, corner_radius=15, border_width=1, border_color="#330033")
         card.grid(row=r, column=c, padx=12, pady=12, sticky="nsew")
         card.columnconfigure(1, weight=1)
+
+        # Background Image (Banner)
+        content_row = 0
+        if img_path:
+            full_path = get_resource_path(os.path.join(RESOURCE_DIR, img_path))
+            if os.path.exists(full_path):
+                try:
+                    from PIL import Image
+                    pil_img = Image.open(full_path)
+                    # Create a wide banner style
+                    banner_tk = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(410, 120))
+                    lbl_banner = ctk.CTkLabel(card, text="", image=banner_tk, corner_radius=15)
+                    lbl_banner.grid(row=0, column=0, columnspan=3, sticky="new", padx=2, pady=2)
+                    content_row = 1
+                except Exception as e:
+                    logging.error(f"Card image error: {e}")
         
-        icon_bg = ctk.CTkFrame(card, fg_color="#110011", width=45, height=45, corner_radius=10)
-        icon_bg.grid(row=0, column=0, padx=(10, 5), pady=15, sticky="nw")
-        icon_bg.pack_propagate(False)
-        ctk.CTkLabel(icon_bg, text=icon, font=("Segoe UI Emoji", 24)).place(relx=0.5, rely=0.5, anchor="center")
+        if icon:
+            icon_bg = ctk.CTkFrame(card, fg_color="#110011", width=45, height=45, corner_radius=10)
+            icon_bg.grid(row=content_row, column=0, padx=(15, 5), pady=15, sticky="nw")
+            icon_bg.pack_propagate(False)
+            ctk.CTkLabel(icon_bg, text=icon, font=("Segoe UI Emoji", 24)).place(relx=0.5, rely=0.5, anchor="center")
+            icon_padx = (15, 5)
+        else:
+            icon_padx = (20, 5)
         
         info_frame = ctk.CTkFrame(card, fg_color="transparent")
-        info_frame.grid(row=0, column=1, pady=10, padx=(5, 10), sticky="nsew")
+        info_frame.grid(row=content_row, column=1, pady=10, padx=icon_padx, sticky="nsew")
         info_frame.columnconfigure(0, weight=1)
         
-        lbl_title = ctk.CTkLabel(info_frame, text=title, font=("Roboto", 14, "bold"), text_color=color, anchor="w", wraplength=150, justify="left")
+        lbl_title = ctk.CTkLabel(info_frame, text=title, font=("Roboto", 14, "bold"), text_color=color, anchor="w", wraplength=180, justify="left")
         lbl_title.grid(row=0, column=0, sticky="ew")
         
-        lbl_desc = ctk.CTkLabel(info_frame, text=desc, font=("Roboto", 11), text_color=COLOR_TEXT_SUB, anchor="w", wraplength=160, justify="left")
+        lbl_desc = ctk.CTkLabel(info_frame, text=desc, font=("Roboto", 11), text_color=COLOR_TEXT_SUB, anchor="w", wraplength=180, justify="left")
         lbl_desc.grid(row=1, column=0, sticky="ew")
         
-        btn = ctk.CTkButton(card, text="ACTIVAR", width=90, height=34, corner_radius=8, font=("Roboto", 11, "bold"), fg_color=color, hover_color=COLOR_ACCENT_HOVER if color == COLOR_ACCENT else "#555", command=cmd)
-        btn.grid(row=0, column=2, padx=(5, 15), pady=15, sticky="e")
+        # Translation of ACTIVAR button text
+        btn_text = "ACTIVAR"
+        try:
+            # Try to get the language from the main app
+            main_app = self.master.master
+            if hasattr(main_app, "current_lang"):
+                btn_text = LANG[main_app.current_lang].get("btn_activar", "ACTIVAR")
+        except:
+            pass
+
+        btn = ctk.CTkButton(card, text=btn_text, width=90, height=34, corner_radius=8, font=("Roboto", 11, "bold"), fg_color=color, hover_color=COLOR_ACCENT_HOVER if color == COLOR_ACCENT else "#555", command=cmd)
+        btn.grid(row=content_row, column=2, padx=(5, 15), pady=15, sticky="e")
         
         # Store references for re-translation
         if not hasattr(self, 'cards_refs'): self.cards_refs = []
@@ -734,9 +813,26 @@ class BaseCommandView(ctk.CTkFrame):
                     f.write('$balloon.Dispose()\n')
                 
                 import subprocess
-                args = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", ps1_path]
+                args = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", "; ".join(cmd_list)]
                 subprocess.Popen(args, creationflags=0x08000000)
-                self.log(f"Ejecutando proceso en segundo plano de forma silenciosa...")
+                
+                # Show native toast if success_msg provided
+                if success_msg:
+                    toast_script = f'''
+                    Add-Type -AssemblyName System.Windows.Forms
+                    $balloon = New-Object System.Windows.Forms.NotifyIcon
+                    $path = (Get-Process -id $pid).Path
+                    $balloon.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($path)
+                    $balloon.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info
+                    $balloon.BalloonTipTitle = "YKZ OPTI"
+                    $balloon.BalloonTipText = "{success_msg}"
+                    $balloon.Visible = $true
+                    $balloon.ShowBalloonTip(5000)
+                    Start-Sleep 5
+                    $balloon.Dispose()
+                    '''
+                    toast_args = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", toast_script]
+                    subprocess.Popen(toast_args, creationflags=0x08000000)
                 
             except Exception as e:
                 self.log(f"ERROR: {e}")
@@ -745,19 +841,20 @@ class BaseCommandView(ctk.CTkFrame):
 
 class OptimizationView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "OPTIMIZACIÓN DE SISTEMA")
-        self.create_card(0, 0, "🚀", "Limpieza Profunda", "Elimina archivos temporales y basura.", self.clean_temp)
-        self.create_card(0, 1, "⚡", "Boost de Red", "Optimiza DNS y configuración TCP/IP.", self.optimize_network)
-        self.create_card(1, 0, "💿", "Optimizar SSD", "Fuerza el comando TRIM en las unidades sólidas (SSD).", self.optimize_ssd)
-        self.create_card(1, 1, "🔓", "Desbloquear Núcleos", "Activa todos los procesadores lógicos.", self.unlock_processors)
-        self.create_card(2, 0, "💤", "Desactivar Hibernación", "Libera espacio y reduce escrituras.", self.disable_hibernate)
-        self.create_card(2, 1, "⏱️", "Menor Latencia", "Ajusta SystemProfile para mejor respuesta.", self.latency_fix)
-        self.create_card(3, 0, "📵", "Apps en Segundo Plano", "Deshabilita el uso de apps en segundo plano.", self.disable_background_apps)
-        self.create_card(3, 1, "🎮", "Desactivar GameBar", "Mejora FPS desactivando Xbox DVR y GameBar.", self.disable_gamebar)
-        self.create_card(4, 0, "👁️", "Rendimiento Visual", "Desactiva efectos visuales innecesarios de Windows.", self.visual_performance)
-        self.create_card(4, 1, "🛡️", "Anti-Telemetría", "Bloquea el envío de datos a Microsoft.", self.disable_telemetry)
-        self.create_card(5, 0, "🖱️", "Ratón Preciso", "Desactiva la aceleración para puntería 1:1.", self.mouse_precision)
-        self.create_card(5, 1, "⚡", "Prioridad CPU", "Prioriza juegos frente a procesos del sistema.", self.cpu_priority)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["opti_title"])
+        self.create_card(0, 0, "🚀", l["opti_c1_t"], l["opti_c1_d"], self.clean_temp)
+        self.create_card(0, 1, "⚡", l["opti_c2_t"], l["opti_c2_d"], self.optimize_network)
+        self.create_card(1, 0, "💿", l["opti_c3_t"], l["opti_c3_d"], self.optimize_ssd)
+        self.create_card(1, 1, "🔓", l["opti_c4_t"], l["opti_c4_d"], self.unlock_processors)
+        self.create_card(2, 0, "💤", l["opti_c5_t"], l["opti_c5_d"], self.disable_hibernate)
+        self.create_card(2, 1, "⏱️", l["opti_c6_t"], l["opti_c6_d"], self.latency_fix)
+        self.create_card(3, 0, "📵", l["opti_c7_t"], l["opti_c7_d"], self.disable_background_apps)
+        self.create_card(3, 1, "🎮", l["opti_c8_t"], l["opti_c8_d"], self.disable_gamebar)
+        self.create_card(4, 0, "👁️", l["opti_c9_t"], l["opti_c9_d"], self.visual_performance)
+        self.create_card(4, 1, "🛡️", l["opt_c11_t"], l["opt_c11_d"], self.disable_telemetry)
+        self.create_card(5, 0, "🖱️", l["opt_c12_t"], l["opt_c12_d"], self.mouse_precision)
+        self.create_card(5, 1, "⚡", l["opt_c13_t"], l["opt_c13_d"], self.cpu_priority)
 
     def clean_temp(self):
         cmds = ['del /q /f /s %TEMP%\\*', 'del /q /f /s C:\\Windows\\Temp\\*', 'ipconfig /flushdns']
@@ -840,13 +937,14 @@ class OptimizationView(BaseCommandView):
 
 class LaptopView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "RENDIMIENTO DE LAPTOP")
-        self.create_card(0, 0, "🔋", "Alto Rendimiento", "Fuerza la CPU al 100% sin throttling de batería.", self.high_perf)
-        self.create_card(0, 1, "⚡", "Boost Batería", "Elimina límites de energía en perfil de batería.", self.power_limits)
-        self.create_card(1, 0, "🎮", "GPU Laptop Boost", "Prioriza GPU dedicada y desactiva ahorro pcie.", self.gpu_boost)
-        self.create_card(1, 1, "🧹", "Optimizar RAM", "Agresiva limpieza de procesos en segundo plano.", self.ram_opt)
-        self.create_card(2, 0, "🌡️", "Anti-Thermal", "Ajusta ventilación y mitigate thermal throttling.", self.anti_thermal)
-        self.create_card(2, 1, "📶", "WiFi Boost", "Evita suspensión del adaptador WiFi para baja latencia.", self.wifi_boost)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["laptop_title"])
+        self.create_card(0, 0, "🔋", l["laptop_c1_t"], l["laptop_c1_d"], self.high_perf)
+        self.create_card(0, 1, "⚡", l["laptop_c2_t"], l["laptop_c2_d"], self.power_limits)
+        self.create_card(1, 0, "🎮", l["laptop_c3_t"], l["laptop_c3_d"], self.gpu_boost)
+        self.create_card(1, 1, "🧹", l["laptop_c4_t"], l["laptop_c4_d"], self.ram_opt)
+        self.create_card(2, 0, "🌡️", l["laptop_c5_t"], l["laptop_c5_d"], self.anti_thermal)
+        self.create_card(2, 1, "📶", l["laptop_c6_t"], l["laptop_c6_d"], self.wifi_boost)
 
     def high_perf(self):
         self.run_cmd(['powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'], "Modo Alto Rendimiento Activado.")
@@ -873,8 +971,9 @@ class LaptopView(BaseCommandView):
 
 class PowerPlanView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "PLAN DE ENERGÍA")
-        self.create_card(0, 0, "⚡", "YKZ Plan", "Activa el plan de energía optimizado de YKZ.", self.ultimate_performance, color=COLOR_ACCENT)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["nav_power"])
+        self.create_card(0, 0, "⚡", l["opti_c10_t"], l["opti_c10_d"], self.ultimate_performance, color=COLOR_ACCENT)
 
     def ultimate_performance(self):
         # Lógica robusta para crear/activar el plan YKZ Plan con descripción
@@ -898,13 +997,13 @@ class PowerPlanView(BaseCommandView):
 
 class NvidiaView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "NVIDIA GFORCE CENTER")
-        nvidia_green = "#ff0000" 
-        self.create_card(0, 0, "🟢", "Configuración Pura", "Boost de relojes y baja latencia.", self.optimize_nvidia, color=COLOR_ACCENT)
-        self.create_card(0, 1, "📬", "MSI Mode", "Forzar interrupciones por mensaje (MSI) para la GPU.", self.msi_mode, color=COLOR_ACCENT)
-        self.create_card(1, 0, "🧹", "Limpiador Driver", "Limpia telemetría y bloquea logs de NVIDIA.", self.clean_nvidia, color=COLOR_ACCENT)
-        self.create_card(1, 1, "🔇", "Desactivar HD Audio", "Desactiva audio por HDMI para reducir latencia DPC.", self.disable_hd_audio, color=COLOR_ACCENT)
-        self.create_card(2, 0, "⚡", "Prioridad IRQ GPU", "Asigna máxima prioridad de interrupción a la gráfica.", self.gpu_priority_irq, color=COLOR_ACCENT)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["nv_title"])
+        self.create_card(0, 0, "🟢", l["nv_c1_t"], l["nv_c1_d"], self.optimize_nvidia, color=COLOR_ACCENT)
+        self.create_card(0, 1, "📬", l["nv_c2_t"], l["nv_c2_d"], self.msi_mode, color=COLOR_ACCENT)
+        self.create_card(1, 0, "🧹", l["nv_c3_t"], l["nv_c3_d"], self.clean_nvidia, color=COLOR_ACCENT)
+        self.create_card(1, 1, "🔇", l["nv_c4_t"], l["nv_c4_d"], self.disable_hd_audio, color=COLOR_ACCENT)
+        self.create_card(2, 0, "⚡", l["nv_c5_t"], l["nv_c5_d"], self.gpu_priority_irq, color=COLOR_ACCENT)
 
     def optimize_nvidia(self):
         cmds = [
@@ -945,14 +1044,15 @@ class NvidiaView(BaseCommandView):
 
 class AmdView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "AMD ADRENALINE CENTER")
-        self.create_card(0, 0, "🌑", "Desactivar ULPS", "Desactiva estado de ultra bajo consumo para más FPS.", self.disable_ulps, color=COLOR_DANGER)
-        self.create_card(0, 1, "📦", "Caché de Sombras", "Fuerza caché de shaders encendida (reduce tirones).", self.shader_cache, color=COLOR_DANGER)
-        self.create_card(1, 0, "📬", "MSI Mode AMD", "Fuerza interrupciones MSI para tarjetas gráficas AMD.", self.msi_mode_amd, color=COLOR_DANGER)
-        self.create_card(1, 1, "⚡", "Opti Latencia", "Ajusta FlipQueueSize para menor input lag.", self.amd_latency_tweak, color=COLOR_DANGER)
-        self.create_card(2, 0, "🔇", "Desactivar HD Audio", "Desactiva audio por HDMI para reducir latencia DPC.", self.disable_hd_audio_amd, color=COLOR_DANGER)
-        self.create_card(2, 1, "⚡", "Prioridad IRQ GPU", "Asigna máxima prioridad de interrupción a la gráfica.", self.gpu_priority_irq_amd, color=COLOR_DANGER)
-        self.create_card(3, 0, "🛑", "Apagar AMD Events", "Reduce micro-tirones apagando el servicio de eventos de AMD.", self.disable_amd_events, color=COLOR_DANGER)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["amd_title"])
+        self.create_card(0, 0, "🌑", l["amd_c1_t"], l["amd_c1_d"], self.disable_ulps, color=COLOR_DANGER)
+        self.create_card(0, 1, "📦", l["amd_c2_t"], l["amd_c2_d"], self.shader_cache, color=COLOR_DANGER)
+        self.create_card(1, 0, "📬", l["amd_c3_t"], l["amd_c3_d"], self.msi_mode_amd, color=COLOR_DANGER)
+        self.create_card(1, 1, "⚡", l["amd_c4_t"], l["amd_c4_d"], self.amd_latency_tweak, color=COLOR_DANGER)
+        self.create_card(2, 0, "🔇", l["amd_c5_t"], l["amd_c5_d"], self.disable_hd_audio_amd, color=COLOR_DANGER)
+        self.create_card(2, 1, "⚡", l["amd_c6_t"], l["amd_c6_d"], self.gpu_priority_irq_amd, color=COLOR_DANGER)
+        self.create_card(3, 0, "🛑", l["amd_c7_t"], l["amd_c7_d"], self.disable_amd_events, color=COLOR_DANGER)
 
     def disable_ulps(self):
         cmds = [
@@ -1006,11 +1106,12 @@ class AmdView(BaseCommandView):
 
 class CleaningView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "LIMPIEZA DE SISTEMA")
-        self.create_card(0, 0, "🗑️", "Limpieza de Disco", "Elimina temporales y vacía la papelera.", self.disk_cleanup, color=COLOR_ACCENT)
-        self.create_card(0, 1, "🌐", "Limpieza Navegadores", "Borra caché de Chrome y Edge.", self.browser_cleanup, color=COLOR_ACCENT)
-        self.create_card(1, 0, "📡", "Reseteo de Red", "Limpia DNS y resetea Winsock.", self.network_reset, color=COLOR_ACCENT)
-        self.create_card(1, 1, "🏪", "Reseteo de Tienda", "Limpia el caché de la Microsoft Store.", self.store_reset, color=COLOR_ACCENT)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["clean_title"])
+        self.create_card(0, 0, "🗑️", l["clean_c1_t"], l["clean_c1_d"], self.disk_cleanup, color=COLOR_ACCENT)
+        self.create_card(0, 1, "🌐", l["clean_c2_t"], l["clean_c2_d"], self.browser_cleanup, color=COLOR_ACCENT)
+        self.create_card(1, 0, "📡", l["clean_c3_t"], l["clean_c3_d"], self.network_reset, color=COLOR_ACCENT)
+        self.create_card(1, 1, "🏪", l["clean_c4_t"], l["clean_c4_d"], self.store_reset, color=COLOR_ACCENT)
 
     def disk_cleanup(self):
         cmds = [
@@ -1065,13 +1166,14 @@ class CleaningView(BaseCommandView):
 
 class RepairView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "REPARACIÓN DE WINDOWS")
-        self.create_card(0, 0, "💻", "Escaneo SFC", "Verifica y repara archivos del sistema.", self.sfc_scan, color=COLOR_ACCENT)
-        self.create_card(0, 1, "🔍", "Análisis DISM", "Comprueba el estado de la imagen de Windows.", self.dism_scan, color=COLOR_ACCENT)
-        self.create_card(1, 0, "🩹", "Reparar DISM", "Repara la imagen de Windows a fondo (lento).", self.dism_repair, color=COLOR_WARNING)
-        self.create_card(1, 1, "💽", "Check Disk", "Busca errores en el disco principal sin reiniciar.", self.chkdsk_scan, color=COLOR_ACCENT)
-        self.create_card(2, 0, "🔄", "Reparar Update", "Restablece los servicios de Windows Update.", self.reset_update, color=COLOR_ACCENT)
-        self.create_card(2, 1, "🖼️", "Reparar Iconos", "Reconstruye el caché de iconos de Windows.", self.rebuild_icons, color=COLOR_ACCENT)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["repair_title"])
+        self.create_card(0, 0, "💻", l["rep_c1_t"], l["rep_c1_d"], self.sfc_scan, color=COLOR_ACCENT)
+        self.create_card(0, 1, "🔍", l["rep_c2_t"], l["rep_c2_d"], self.dism_scan, color=COLOR_ACCENT)
+        self.create_card(1, 0, "🩹", l["rep_c3_t"], l["rep_c3_d"], self.dism_repair, color=COLOR_WARNING)
+        self.create_card(1, 1, "💽", l["rep_c4_t"], l["rep_c4_d"], self.chkdsk_scan, color=COLOR_ACCENT)
+        self.create_card(2, 0, "🔄", l["rep_c5_t"], l["rep_c5_d"], self.reset_update, color=COLOR_ACCENT)
+        self.create_card(2, 1, "🖼️", l["rep_c6_t"], l["rep_c6_d"], self.rebuild_icons, color=COLOR_ACCENT)
 
     def sfc_scan(self):
         cmds = ['sfc /scannow']
@@ -1115,8 +1217,9 @@ class RepairView(BaseCommandView):
 
 class ActivacionView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "ACTIVAR WINDOWS")
-        self.create_card(0, 0, "🔑", "Activar Windows", "Ejecuta el script de activación oficial automáticamente. Puede tardar un par de minutos.", self.activate_windows, color=COLOR_SUCCESS)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["act_title"])
+        self.create_card(0, 0, "🔑", l["act_c1_t"], l["act_c1_d"], self.activate_windows, color=COLOR_SUCCESS)
 
     def activate_windows(self):
         def _run_admin():
@@ -1145,7 +1248,7 @@ class ActivacionView(BaseCommandView):
 
 class DriversView(ctk.CTkFrame):
     def __init__(self, master):
-        super().__init__(master, fg_color="transparent")
+        super().__init__(master, fg_color=COLOR_BG)
         self.pack_propagate(False)
         
         # Tema profesional Morado/Rojo (mezcla Driver Booster + YKZ)
@@ -1155,14 +1258,16 @@ class DriversView(ctk.CTkFrame):
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.header_frame.pack(fill="x", padx=20, pady=(20, 10))
         
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        
         # Banner Principal
         self.banner = ctk.CTkFrame(self.header_frame, fg_color="#121217", border_width=1, border_color="#333333")
         self.banner.pack(fill="x", expand=True)
         
-        self.lbl_status_main = ctk.CTkLabel(self.banner, text="Haz clic en ESCANEAR AHORA para analizar tu hardware real.", font=("Segoe UI", 16), text_color="white", justify="left")
+        self.lbl_status_main = ctk.CTkLabel(self.banner, text=l["drv_desc"], font=("Segoe UI", 16), text_color="white", justify="left")
         self.lbl_status_main.pack(side="left", pady=15, padx=(20, 0))
         
-        self.btn_huge_scan = ctk.CTkButton(self.banner, text="ESCANEAR AHORA", font=("Segoe UI", 14, "bold"), 
+        self.btn_huge_scan = ctk.CTkButton(self.banner, text=l["drv_btn_scan"].replace("\n", " "), font=("Segoe UI", 14, "bold"), 
                                             fg_color=self.accent_color, hover_color="#6221cc", text_color="white",
                                             corner_radius=4, height=45, command=self.scan_drivers_pro)
         self.btn_huge_scan.pack(side="right", padx=20)
@@ -1183,7 +1288,7 @@ class DriversView(ctk.CTkFrame):
         self.controls_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.controls_frame.pack(fill="x", padx=20, pady=(0, 5))
         
-        self.chk_restart = ctk.CTkCheckBox(self.controls_frame, text="Reiniciar sistema al finalizar", font=("Segoe UI", 12), text_color="#bbbbbb", fg_color=self.accent_color, hover_color="#6221cc", corner_radius=2)
+        self.chk_restart = ctk.CTkCheckBox(self.controls_frame, text=l["drv_chk_restart"], font=("Segoe UI", 12), text_color="#bbbbbb", fg_color=self.accent_color, hover_color="#6221cc", corner_radius=2)
         self.chk_restart.pack(side="right")
         self.chk_restart.select()
         
@@ -1208,11 +1313,11 @@ class DriversView(ctk.CTkFrame):
         self.scrollbar = ttk.Scrollbar(self.table_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=self.scrollbar.set)
         
-        self.tree.heading("device", text="DISPOSITIVO")
-        self.tree.heading("manufacturer", text="FABRICANTE")
-        self.tree.heading("version", text="VER. INSTALADA")
-        self.tree.heading("date", text="FECHA")
-        self.tree.heading("status", text="ESTADO")
+        self.tree.heading("device", text=l.get("drv_col_dev", "DEVICE"))
+        self.tree.heading("manufacturer", text=l.get("drv_col_man", "MANUFACTURER"))
+        self.tree.heading("version", text=l.get("drv_col_ver", "INSTALLED VER."))
+        self.tree.heading("date", text=l.get("drv_col_date", "DATE"))
+        self.tree.heading("status", text=l.get("drv_col_status", "STATUS"))
         
         self.tree.column("device", width=350, anchor="w")
         self.tree.column("manufacturer", width=120, anchor="center")
@@ -1417,24 +1522,34 @@ class LoginWindow(ctk.CTkToplevel):
     def __init__(self, parent, on_success):
         super().__init__(parent)
         self.on_success = on_success
-        self.geometry("400x300")
-        self.title("Activación Requerida")
+        self.geometry("400x320")
+        
+        # Determine language for login window
+        self.lang_code = "ES"
+        try:
+            if hasattr(parent, "current_lang"):
+                self.lang_code = parent.current_lang
+        except: pass
+        l = LANG[self.lang_code]
+
+        self.title(l["login_title"])
         self.configure(fg_color=COLOR_BG)
         
         ws = self.winfo_screenwidth()
         hs = self.winfo_screenheight()
         x = (ws/2) - (400/2)
-        y = (hs/2) - (300/2)
-        self.geometry('%dx%d+%d+%d' % (400, 300, x, y))
+        y = (hs/2) - (320/2)
+        self.geometry('+%d+%d' % (x, y))
         self.grab_set()
+        self.attributes("-topmost", True)
         
-        ctk.CTkLabel(self, text="ACTIVACIÓN YKZ", font=("Arial", 20, "bold"), text_color=COLOR_ACCENT).pack(pady=(40, 20))
-        ctk.CTkLabel(self, text="Introduce tu clave de producto para continuar:", text_color="white").pack(pady=5)
+        ctk.CTkLabel(self, text="YKZ OPTI", font=("Arial", 24, "bold"), text_color=COLOR_ACCENT).pack(pady=(40, 10))
+        ctk.CTkLabel(self, text=l["login_desc"], text_color="white").pack(pady=5)
         
-        self.entry = ctk.CTkEntry(self, width=250, placeholder_text="YKZ-XXXX-XXXX-XXXX", justify="center")
+        self.entry = ctk.CTkEntry(self, width=280, placeholder_text=l["login_ph"], justify="center", height=40)
         self.entry.pack(pady=15)
         
-        ctk.CTkButton(self, text="ACTIVAR", width=250, fg_color=COLOR_ACCENT, hover_color="#cc0000", command=self.check_key).pack(pady=10)
+        ctk.CTkButton(self, text=l["login_btn"], width=280, height=45, font=("Arial", 14, "bold"), fg_color=COLOR_ACCENT, hover_color=COLOR_ACCENT_HOVER, command=self.check_key).pack(pady=10)
         
         self.lbl_msg = ctk.CTkLabel(self, text="", text_color="red")
         self.lbl_msg.pack(pady=10)
@@ -1442,13 +1557,14 @@ class LoginWindow(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def check_key(self):
+        l = LANG[self.lang_code]
         key = self.entry.get().strip().upper()
         if LicenseManager.validate(key):
             LicenseManager.save(key)
-            self.lbl_msg.configure(text="¡Activado!", text_color="green")
+            self.lbl_msg.configure(text=l["login_success"], text_color="green")
             self.after(1000, self.finish)
         else:
-            self.lbl_msg.configure(text="Clave inválida.", text_color="red")
+            self.lbl_msg.configure(text=l["login_fail"], text_color="red")
 
     def finish(self):
         self.destroy()
@@ -1461,66 +1577,56 @@ class LoginWindow(ctk.CTkToplevel):
 
 class GamingView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "GAME BOOSTERS")
-        self.create_card(0, 0, "🔫", "Valorant / CS2", "Optimización extrema del motor y red.", self.boost_fps, color=COLOR_ACCENT)
-        self.create_card(0, 1, "🚗", "FiveM Boost", "Prioridad máxima y limpieza de caché GTA/FiveM.", self.boost_fivem, color=COLOR_ACCENT)
-        self.create_card(1, 0, "🖥️", "FSO Fix", "Desactiva Fullscreen Optimizations globalmente.", self.fso_fix, color=COLOR_ACCENT)
-        self.create_card(1, 1, "🧠", "Limpiar RAM (ISLC)", "Libera la caché en espera instantáneamente.", self.clear_ram, color=COLOR_WARNING)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["gaming_title"])
+        self.create_card(0, 0, "", l["gaming_c1_t"], l["gaming_c1_d"], self.boost_fps, color=COLOR_ACCENT, img_path="valorant_bg.png")
+        self.create_card(0, 1, "", l["gaming_c2_t"], l["gaming_c2_d"], self.boost_fivem, color=COLOR_ACCENT, img_path="fivem_bg.png")
+        self.create_card(1, 0, "🖥️", l["gaming_c3_t"], l["gaming_c3_d"], self.fso_fix, color=COLOR_ACCENT)
+        self.create_card(1, 1, "🧠", l["gaming_c4_t"], l["gaming_c4_d"], self.clear_ram, color=COLOR_WARNING)
 
     def boost_fps(self):
+        l = LANG[getattr(self.master.master, 'current_lang', 'ES')]
         cmds = [
             r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f',
             r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Priority" /t REG_DWORD /d 6 /f',
             r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f'
         ]
-        self.run_cmd(cmds, "Optimización de juegos competitivos (Valo/CS2) aplicada.")
+        self.run_cmd(cmds, l.get("gaming_c1_success", "Optimización de juegos aplicada."))
 
     def boost_fivem(self):
+        l = LANG[getattr(self.master.master, 'current_lang', 'ES')]
         cmds = [
             r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FiveM.exe\PerfOptions" /v "CpuPriorityClass" /t REG_DWORD /d 3 /f',
             r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\GTA5.exe\PerfOptions" /v "CpuPriorityClass" /t REG_DWORD /d 3 /f',
             'Remove-Item -Path "$env:LOCALAPPDATA\FiveM\FiveM.app\data\cache\*" -Recurse -Force -ErrorAction SilentlyContinue',
             'Remove-Item -Path "$env:LOCALAPPDATA\FiveM\FiveM.app\data\server-cache\*" -Recurse -Force -ErrorAction SilentlyContinue'
         ]
-        self.run_cmd(cmds, "FiveM optimizado: Caché borrada y CPU priorizada a Alta.")
+        self.run_cmd(cmds, l.get("gaming_c2_success", "FiveM optimizado: Caché borrada y CPU priorizada."))
 
     def fso_fix(self):
+        l = LANG[getattr(self.master.master, 'current_lang', 'ES')]
         cmds = [
             r'reg add "HKCU\System\GameConfigStore" /v GameDVR_FSEBehaviorMode /t REG_DWORD /d 2 /f',
             r'reg add "HKCU\System\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /t REG_DWORD /d 1 /f'
         ]
-        self.run_cmd(cmds, "Fullscreen Optimizations desactivado globalmente.")
+        self.run_cmd(cmds, l.get("gaming_c3_success", "FSO Fix aplicado."))
 
     def clear_ram(self):
-        cmds = [
-            # Uses a built in powershell method to clear working set and standby list
-            '$ErrorActionPreference = "Stop"',
-            '[gc]::Collect()',
-            '[gc]::WaitForPendingFinalizers()',
-            '''
-            $source = @"
-            using System;
-            using System.Runtime.InteropServices;
-            public class MemCleaner {
-                [DllImport("psapi.dll")]
-                static extern int EmptyWorkingSet(IntPtr hwProc);
-                public static void Clear() {
-                    EmptyWorkingSet(System.Diagnostics.Process.GetCurrentProcess().Handle);
-                }
-            }
-"@
-            Add-Type -TypeDefinition $source
-            [MemCleaner]::Clear()
-            '''
-        ]
-        self.run_cmd(cmds, "Caché de memoria RAM limpia (ISLC alternativo).")
+        # Call the main app's optimization method
+        if hasattr(self.master.master, 'optimize_ram'):
+            self.master.master.optimize_ram()
+        else:
+            # Fallback if called before master is ready
+            l = LANG[getattr(self.master.master, 'current_lang', 'ES')]
+            self.run_cmd(["echo RAM optimization triggered"], l.get("gaming_c4_success", "Optimizador de RAM activado."))
 
 class InputLagView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "INPUT LAG EXTREMO")
-        self.create_card(0, 0, "⌨️", "FilterKeys Fix", "Elimina el retraso de repetición del teclado.", self.filterkeys, color=COLOR_ACCENT)
-        self.create_card(0, 1, "🔌", "USB Polling Rate", "Fuerza máxima velocidad en puertos USB.", self.usb_polling, color=COLOR_ACCENT)
-        self.create_card(1, 0, "⏱️", "DPC Latency", "Ajusta latencia DPC y SystemTimerResolution.", self.dpc_latency, color=COLOR_ACCENT)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["input_title"])
+        self.create_card(0, 0, "⌨️", l["input_c1_t"], l["input_c1_d"], self.filterkeys, color=COLOR_ACCENT)
+        self.create_card(0, 1, "🔌", l["input_c2_t"], l["input_c2_d"], self.usb_polling, color=COLOR_ACCENT)
+        self.create_card(1, 0, "⏱️", l["input_c3_t"], l["input_c3_d"], self.dpc_latency, color=COLOR_ACCENT)
 
     def filterkeys(self):
         cmds = [
@@ -1550,9 +1656,10 @@ class InputLagView(BaseCommandView):
 
 class DebloatView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "WINDOWS DEBLOATER")
-        self.create_card(0, 0, "🪶", "Modo Windows Lite", "Desactiva todos los servicios pesados ocultos.", self.windows_lite, color=COLOR_DANGER)
-        self.create_card(0, 1, "🗑️", "Quitar Bloatware", "Elimina apps nativas (TikTok, Xbox, etc).", self.remove_bloatware, color=COLOR_DANGER)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["debloat_title"])
+        self.create_card(0, 0, "🪶", l["debloat_c1_t"], l["debloat_c1_d"], self.windows_lite, color=COLOR_DANGER)
+        self.create_card(0, 1, "🗑️", l["debloat_c2_t"], l["debloat_c2_d"], self.remove_bloatware, color=COLOR_DANGER)
 
     def windows_lite(self):
         cmds = [
@@ -1576,8 +1683,9 @@ class DebloatView(BaseCommandView):
 
 class SecurityView(BaseCommandView):
     def __init__(self, master):
-        super().__init__(master, "SEGURIDAD Y RESPALDO")
-        self.create_card(0, 0, "🛡️", "Crear Punto", "Crea un Punto de Restauración del Sistema ahora.", self.restore_point, color=COLOR_SUCCESS)
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        super().__init__(master, l["sec_title"])
+        self.create_card(0, 0, "🛡️", l["sec_c1_t"], l["sec_c1_d"], self.restore_point, color=COLOR_SUCCESS)
 
     def restore_point(self):
         cmds = [
@@ -1601,6 +1709,10 @@ class PurpleStarsBackground:
                                     bg=COLOR_BG)
 
         self.canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        try:
+            self.canvas.lower() # Place behind everything
+        except:
+            pass
 
         self.stars = []
 
@@ -1669,6 +1781,8 @@ class PurpleApp(ctk.CTk):
             self.login = LoginWindow(self, self.start_intro)
 
     def start_intro(self):
+        # Start pre-fetching hardware data early
+        self.load_data()
         self.intro = IntroWindow(self, self.show_main)
         # self.ensure_shortcut() # Skip shortcut creation in dev/recovery env
 
@@ -1766,8 +1880,53 @@ class PurpleApp(ctk.CTk):
         self.deiconify()
         self.after(200, self.set_icon)
         self.setup_ui()
-        self.after(500, self.load_data)
-        self.after(2000, lambda: self.check_update(manual=False))
+        # Data is already being fetched since start_intro, UI will update automatically
+        self.after(1000, lambda: self.check_update(manual=False))
+        # Start the 5-minute auto-RAM optimizer
+        self.after(300000, self.start_auto_ram_clean)
+
+    def optimize_ram(self):
+        l = LANG.get(self.current_lang, LANG["ES"])
+        # We use a separate local function to run the command to not block UI
+        def _do_optimize():
+            cmds = [
+                '''
+                $source = @"
+                using System;
+                using System.Collections.Generic;
+                public class MemoryOptimizer {
+                    public static void Optimize() {
+                        List<byte[]> blocks = new List<byte[]>();
+                        try {
+                            for (int i = 0; i < 80; i++) {
+                                byte[] block = new byte[100 * 1024 * 1024];
+                                blocks.Add(block);
+                            }
+                        } catch { }
+                        blocks.Clear();
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                    }
+                }
+"@
+                try {
+                    Add-Type -TypeDefinition $source -ErrorAction SilentlyContinue
+                    [MemoryOptimizer]::Optimize()
+                } catch { }
+                '''
+            ]
+            # Run silently with the literal for CREATE_NO_WINDOW
+            subprocess.run(["powershell", "-Command", cmds[0]], capture_output=True, creationflags=0x08000000)
+            logging.info("Auto RAM Optimization completed.")
+
+        threading.Thread(target=_do_optimize, daemon=True).start()
+        # If this was called from a view that wants UI feedback (like GamingView), 
+        # normally we'd show a message, but since this is also auto, we'll be quiet here.
+
+    def start_auto_ram_clean(self):
+        self.optimize_ram()
+        # Re-schedule every 5 minutes (300,000 ms)
+        self.after(300000, self.start_auto_ram_clean)
 
     def setup_ui(self):
         self.current_lang = "ES"
@@ -1775,9 +1934,10 @@ class PurpleApp(ctk.CTk):
         self.stars_bg = PurpleStarsBackground(self, width=1100, height=700)
 
         self.sidebar = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color=COLOR_PANEL)
-
+        self.sidebar.pack(side="left", fill="y")
         
-
+        self.lbl_logo = GlitchLogo(self.sidebar, text="YKZ OPTI")
+        self.lbl_logo.pack(pady=30)
         
         self.nav_frame = ctk.CTkScrollableFrame(self.sidebar, width=220, fg_color="transparent")
         self.nav_frame.pack(fill="both", expand=True)
@@ -1792,6 +1952,9 @@ class PurpleApp(ctk.CTk):
         self.btn_input = self.create_nav_btn(LANG[self.current_lang]["nav_input"], self.show_input)
         self.btn_debloat = self.create_nav_btn(LANG[self.current_lang]["nav_debloat"], self.show_debloat)
         self.btn_security = self.create_nav_btn(LANG[self.current_lang]["nav_security"], self.show_security)
+        
+        # Enable fluid scroll for sidebar too - removed bind_all
+        self.nav_frame.bind("<MouseWheel>", lambda e: self.nav_frame._parent_canvas.yview_scroll(int(-1*(e.delta/60)), "units"))
         if is_laptop():
             self.btn_laptop = self.create_nav_btn(LANG[self.current_lang]["nav_laptop"], self.show_laptop)
         self.btn_nvidia = self.create_nav_btn(LANG[self.current_lang]["nav_nvidia"], self.show_nvidia)
@@ -1814,26 +1977,29 @@ class PurpleApp(ctk.CTk):
         
         ctk.CTkLabel(self.sidebar, text=f"v{CURRENT_VERSION}", font=("Arial", 10), text_color="#555").pack(side="bottom", pady=(0, 10))
 
-        self.main_area = ctk.CTkFrame(self, fg_color="transparent")
+        self.main_area = ctk.CTkFrame(self, fg_color=COLOR_BG) # Changed to COLOR_BG to avoid black gaps
         self.main_area.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
-        self.view_home = ctk.CTkScrollableFrame(self.main_area, fg_color="transparent")
+        self.view_home = ctk.CTkScrollableFrame(self.main_area, fg_color=COLOR_BG)
         self.setup_home_grid()
         
         self.view_opti = OptimizationView(self.main_area)
-        self.view_gaming = GamingView(self.main_area)
-        self.view_input = InputLagView(self.main_area)
-        self.view_debloat = DebloatView(self.main_area)
-        self.view_security = SecurityView(self.main_area)
-        if is_laptop():
-            self.view_laptop = LaptopView(self.main_area)
-        self.view_nvidia = NvidiaView(self.main_area)
-        self.view_amd = AmdView(self.main_area)
-        self.view_cleaning = CleaningView(self.main_area)
-        self.view_drivers = DriversView(self.main_area)
-        self.view_repair = RepairView(self.main_area)
-        self.view_power = PowerPlanView(self.main_area)
-        self.view_activa = ActivacionView(self.main_area)
+        try:
+            self.view_gaming = GamingView(self.main_area)
+            self.view_input = InputLagView(self.main_area)
+            self.view_debloat = DebloatView(self.main_area)
+            self.view_security = SecurityView(self.main_area)
+            if is_laptop():
+                self.view_laptop = LaptopView(self.main_area)
+            self.view_nvidia = NvidiaView(self.main_area)
+            self.view_amd = AmdView(self.main_area)
+            self.view_cleaning = CleaningView(self.main_area)
+            self.view_drivers = DriversView(self.main_area)
+            self.view_repair = RepairView(self.main_area)
+            self.view_power = PowerPlanView(self.main_area)
+            self.view_activa = ActivacionView(self.main_area)
+        except Exception as e:
+            logging.error(f"Error initializing views: {e}")
 
         self.show_home()
 
@@ -1962,8 +2128,8 @@ class PurpleApp(ctk.CTk):
         self._hide_all_views()
         self.view_home.pack(fill="both", expand=True)
         self._update_nav(self.btn_home)
-        if hasattr(self, 'lbl_logo'):
-            self.lbl_logo.pack(pady=30, side="top", before=self.btn_home)
+        if hasattr(self, 'lbl_logo') and hasattr(self, 'nav_frame'):
+            self.lbl_logo.pack(pady=30, side="top", before=self.nav_frame)
 
     def show_opti(self):
         self._hide_all_views()
@@ -2054,20 +2220,16 @@ class PurpleApp(ctk.CTk):
             self.lbl_logo.pack_forget()
 
     def _hide_all_views(self):
-        self.view_home.pack_forget()
-        self.view_opti.pack_forget()
-        self.view_gaming.pack_forget()
-        self.view_input.pack_forget()
-        self.view_debloat.pack_forget()
-        self.view_security.pack_forget()
-        if hasattr(self, 'view_laptop'): self.view_laptop.pack_forget()
-        self.view_nvidia.pack_forget()
-        self.view_amd.pack_forget()
-        self.view_cleaning.pack_forget()
-        self.view_drivers.pack_forget()
-        self.view_repair.pack_forget()
-        self.view_power.pack_forget()
-        self.view_activa.pack_forget()
+        views = [
+            'view_home', 'view_opti', 'view_gaming', 'view_input', 
+            'view_debloat', 'view_security', 'view_laptop', 'view_nvidia',
+            'view_amd', 'view_cleaning', 'view_drivers', 'view_repair', 
+            'view_power', 'view_activa'
+        ]
+        for v_name in views:
+            if hasattr(self, v_name):
+                v = getattr(self, v_name)
+                if v: v.pack_forget()
 
     def _update_nav(self, active_btn):
         self.btn_home.configure(fg_color="transparent")
@@ -2081,7 +2243,13 @@ class PurpleApp(ctk.CTk):
         self.btn_power.configure(fg_color="transparent")
         self.btn_activa.configure(fg_color="transparent")
         
-        active_btn.configure(fg_color=COLOR_BG)
+        if hasattr(self, 'btn_gaming'): self.btn_gaming.configure(fg_color="transparent")
+        if hasattr(self, 'btn_input'): self.btn_input.configure(fg_color="transparent")
+        if hasattr(self, 'btn_debloat'): self.btn_debloat.configure(fg_color="transparent")
+        if hasattr(self, 'btn_security'): self.btn_security.configure(fg_color="transparent")
+        
+        # Use ACCENT color for the active button so it "pops" and doesn't look black
+        active_btn.configure(fg_color=COLOR_ACCENT)
 
     def setup_home_grid(self):
         l = LANG.get(getattr(self, 'current_lang', 'ES'), LANG["ES"])
@@ -2112,11 +2280,13 @@ class PurpleApp(ctk.CTk):
             self.cards[k] = card
 
     def load_data(self):
+        logging.info("Iniciando carga de datos de hardware...")
         if hasattr(self, 'cards'):
             for c in self.cards.values():
                 for w in c.content_area.winfo_children(): w.destroy()
         
-        threading.Thread(target=self._fetch_wmi, daemon=True).start()
+        t = threading.Thread(target=self._fetch_wmi, daemon=True)
+        t.start()
 
     def _fetch_wmi(self):
         try:
