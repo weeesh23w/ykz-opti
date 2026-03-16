@@ -814,10 +814,12 @@ class BaseCommandView(ctk.CTkFrame):
                 
                 import subprocess
                 args = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", "; ".join(cmd_list)]
-                subprocess.Popen(args, creationflags=0x08000000)
+                # Use subprocess.run to wait for completion inside the thread
+                subprocess.run(args, creationflags=0x08000000)
                 
-                # Show native toast if success_msg provided
+                # Show native toast ONLY AFTER completion
                 if success_msg:
+                    time.sleep(1) # Small delay for the system to settle
                     toast_script = f'''
                     Add-Type -AssemblyName System.Windows.Forms
                     $balloon = New-Object System.Windows.Forms.NotifyIcon
@@ -832,7 +834,7 @@ class BaseCommandView(ctk.CTkFrame):
                     $balloon.Dispose()
                     '''
                     toast_args = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", toast_script]
-                    subprocess.Popen(toast_args, creationflags=0x08000000)
+                    subprocess.run(toast_args, creationflags=0x08000000)
                 
             except Exception as e:
                 self.log(f"ERROR: {e}")
@@ -1690,13 +1692,19 @@ class SecurityView(BaseCommandView):
     def restore_point(self):
         l = LANG.get(getattr(self.master.master, 'current_lang', 'ES'), LANG["ES"])
         cmds = [
-            'Write-Host "Configurando el sistema para crear punto de restauración..." -ForegroundColor Cyan',
+            'Write-Host "Iniciando servicios de respaldo..." -ForegroundColor Cyan',
+            'Set-Service -Name vss -StartupType Automatic -ErrorAction SilentlyContinue',
+            'Start-Service vss -ErrorAction SilentlyContinue',
+            'Write-Host "Habilitando protección en C:..." -ForegroundColor Cyan',
             'Enable-ComputerRestore -Drive "C:" -ErrorAction SilentlyContinue',
-            'vssadmin Resize ShadowStorage /For=C: /On=C: /MaxSize=5% | Out-Null',
+            'Write-Host "Saltando límites de frecuencia..." -ForegroundColor Cyan',
             'Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SystemRestore" -Name "SystemRestorePointCreationFrequency" -Value 0 -Force',
-            'Checkpoint-Computer -Description "YKZ Opti Manual Backup" -RestorePointType "MODIFY_SETTINGS" -Confirm:$false'
+            'Write-Host "Creando punto de restauración (esto puede tardar unos segundos)..." -ForegroundColor Cyan',
+            '$rs = [wmiclass]"\\\\.\\root\\default:SystemRestore"',
+            '$res = $rs.CreateRestorePoint("YKZ Opti Manual Backup", 12, 100)',
+            'if ($res.ReturnValue -eq 0) { Write-Host "¡Éxito!" } else { throw "Error al crear: $($res.ReturnValue)" }'
         ]
-        self.run_cmd(cmds, "Punto de Restauración 'YKZ Opti Manual Backup' creado con éxito. Verifica en 'rstrui.exe'.")
+        self.run_cmd(cmds, "Punto de Restauración 'YKZ Opti Manual Backup' creado con éxito. Verifica en 'rstrui.exe' (debería aparecer ahora).")
 
 # ==================== End of new views ====================
 
