@@ -1822,8 +1822,11 @@ class PurpleApp(ctk.CTk):
     def check_update(self, manual=False):
         def _check():
             try:
-                logging.info(f"Checking update from {UPDATE_JSON_URL}")
-                with urllib.request.urlopen(UPDATE_JSON_URL, timeout=15) as url:
+                # Add cache buster to URL
+                cache_buster = f"?t={int(time.time())}"
+                url_to_fetch = UPDATE_JSON_URL + cache_buster
+                logging.info(f"Checking update from {url_to_fetch}")
+                with urllib.request.urlopen(url_to_fetch, timeout=15) as url:
                     data = json.loads(url.read().decode())
                 remote_ver = data.get("version", "0.0.0")
                 exe_url = data.get("url", "")
@@ -1854,7 +1857,7 @@ class PurpleApp(ctk.CTk):
     def perform_update(self, url):
         def _download_and_update():
             try:
-                self.after(0, lambda: messagebox.showinfo("Actualizando", "Iniciando descarga de la versión 2.8.2.\n\nPor favor, espera a que el programa se cierre solo (puede tardar un minuto)."))
+                self.after(0, lambda: messagebox.showinfo("Actualizando", "Iniciando descarga de la nueva versión.\n\nPor favor, espera a que el programa se cierre solo (puede tardar un minuto)."))
                 import tempfile, ctypes
 
                 if not getattr(sys, 'frozen', False):
@@ -1865,10 +1868,17 @@ class PurpleApp(ctk.CTk):
                 tmp_dir = tempfile.gettempdir()
                 new_exe_path = os.path.join(tmp_dir, "YKZ_Final.exe")
 
-                # Descarga nativa de Windows (sin timeouts arbitrarios de Python)
-                res = ctypes.windll.urlmon.URLDownloadToFileW(None, url, new_exe_path, 0, None)
-                if res != 0:
-                    raise Exception(f"Código de error: {res}")
+                # Descarga nativa con fallback
+                try:
+                    res = ctypes.windll.urlmon.URLDownloadToFileW(None, url, new_exe_path, 0, None)
+                    if res != 0: raise Exception(f"urlmon fail code: {res}")
+                except Exception as de:
+                    logging.info(f"Urlmon failed, trying urllib: {de}")
+                    import urllib.request
+                    opener = urllib.request.build_opener()
+                    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+                    urllib.request.install_opener(opener)
+                    urllib.request.urlretrieve(url, new_exe_path)
 
                 # Script de reemplazo ultra-agresivo
                 ps_path = os.path.join(tmp_dir, "ykz_install.ps1")
@@ -1876,17 +1886,21 @@ class PurpleApp(ctk.CTk):
                 p_name = exe_name.replace(".exe", "")
                 
                 script = (
-                    f"Start-Sleep -Seconds 1\n"
-                    f"Get-Process -Name '{p_name}' -ErrorAction SilentlyContinue | Stop-Process -Force\n"
-                    f"Start-Sleep -Seconds 1\n"
-                    f"Move-Item -Path '{new_exe_path}' -Destination '{exe_path}' -Force\n"
-                    f"Start-Process '{exe_path}'\n"
+                    f"$ErrorActionPreference = 'SilentlyContinue'\n"
+                    f"Start-Sleep -Seconds 2\n"
+                    f"Stop-Process -Name '{p_name}' -Force\n"
+                    f"taskkill /F /IM '{exe_name}' /T /FI 'STATUS eq RUNNING'\n"
+                    f"Start-Sleep -Seconds 2\n"
+                    f"if (Test-Path '{new_exe_path}') {{\n"
+                    f"    Move-Item -Path '{new_exe_path}' -Destination '{exe_path}' -Force\n"
+                    f"    Start-Process '{exe_path}'\n"
+                    f"}}\n"
                 )
                 
                 with open(ps_path, "w", encoding="utf-8") as f:
                     f.write(script)
 
-                # Ejecutar como admin para tener permisos de escritura en Escritorio/Program Files
+                # Ejecutar script de instalación como administrador
                 ctypes.windll.shell32.ShellExecuteW(None, "runas", "powershell.exe", 
                     f"-WindowStyle Hidden -ExecutionPolicy Bypass -File \"{ps_path}\"", None, 0)
                 
