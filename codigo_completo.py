@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.8.7"
+CURRENT_VERSION = "2.8.8"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -1688,11 +1688,15 @@ class SecurityView(BaseCommandView):
         self.create_card(0, 0, "🛡️", l["sec_c1_t"], l["sec_c1_d"], self.restore_point, color=COLOR_SUCCESS)
 
     def restore_point(self):
+        l = LANG.get(getattr(self.master.master, 'current_lang', 'ES'), LANG["ES"])
         cmds = [
+            'Write-Host "Configurando el sistema para crear punto de restauración..." -ForegroundColor Cyan',
             'Enable-ComputerRestore -Drive "C:" -ErrorAction SilentlyContinue',
-            'Checkpoint-Computer -Description "YKZ Opti Manual Backup" -RestorePointType "MODIFY_SETTINGS" -ErrorAction SilentlyContinue'
+            'vssadmin Resize ShadowStorage /For=C: /On=C: /MaxSize=5% | Out-Null',
+            'Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SystemRestore" -Name "SystemRestorePointCreationFrequency" -Value 0 -Force',
+            'Checkpoint-Computer -Description "YKZ Opti Manual Backup" -RestorePointType "MODIFY_SETTINGS" -Confirm:$false'
         ]
-        self.run_cmd(cmds, "Punto de Restauración 'YKZ Opti Manual Backup' creado con éxito.")
+        self.run_cmd(cmds, "Punto de Restauración 'YKZ Opti Manual Backup' creado con éxito. Verifica en 'rstrui.exe'.")
 
 # ==================== End of new views ====================
 
@@ -1770,8 +1774,21 @@ class PurpleApp(ctk.CTk):
         self.current_lang = "ES"
         self.configure(fg_color=COLOR_BG)
         self.set_icon()
+        self.check_security()
         self.withdraw()
         self.check_license_flow()
+
+    def check_security(self):
+        """Basic Anti-Debug and Integrity Check"""
+        try:
+            # 1. Anti-Debug: Check if a debugger is attached
+            if ctypes.windll.kernel32.IsDebuggerPresent():
+                sys.exit(0)
+            
+            # 2. Check for common VM/Sandbox filenames or artifacts could go here
+            # For now, let's keep it simple but effective against casual debuggers
+        except:
+            pass
 
     def check_license_flow(self):
         saved_key = LicenseManager.load()
