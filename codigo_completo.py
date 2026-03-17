@@ -1410,15 +1410,17 @@ class DriversView(ctk.CTkFrame):
     def _finish_scan_pro(self, drivers):
         self.progress.stop()
         self.progress.set(1)
+        self.lbl_scan_desc.configure(text=f"Procesando dispositivos: 100%")
         self.is_scanning = False
         
+        updated_count = 0
         for d in drivers:
             status = d.get('status', 'Al día')
             
-            # Solo mostrar los que necesitan actualización
             if status != "Update Available":
                 continue
             
+            updated_count += 1
             item_id = self.tree.insert("", "end", values=(
                 d['name'], 
                 d['manufacturer'], 
@@ -1427,12 +1429,15 @@ class DriversView(ctk.CTkFrame):
                 status
             ))
             
-            # Resaltar en naranja/amarillo
             self.tree.tag_configure('update', foreground="#ffaa00")
             self.tree.item(item_id, tags=('update',))
             
         self.lbl_status_main.configure(text=f"Escaneo completado. {len(drivers)} dispositivos analizados.", text_color=self.accent_color)
-        self.btn_huge_scan.configure(state="normal", text="ACTUALIZAR TODO", fg_color="#1e5128", hover_color="#14361b", command=self.update_all_pro)
+        
+        if updated_count > 0:
+            self.btn_huge_scan.configure(state="normal", text="ACTUALIZAR TODO", fg_color="#1e5128", hover_color="#14361b", command=self.update_all_pro)
+        else:
+            self.btn_huge_scan.configure(state="disabled", text="ESTÁN TODOS AL DÍA", fg_color="#333333", text_color="#888888")
 
     def update_all_pro(self):
         from driver_updater import DriverUpdater
