@@ -1248,6 +1248,60 @@ class ActivacionView(BaseCommandView):
         import threading
         threading.Thread(target=_run_admin, daemon=True).start()
 
+class RebootCountdown(ctk.CTkToplevel):
+    def __init__(self, parent, seconds=10):
+        super().__init__(parent)
+        self.title("YKZ Optimizer")
+        self.geometry("400x180")
+        self.resizable(False, False)
+        self.configure(fg_color="white")
+        self.seconds = seconds
+        
+        # Centrar ventana
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (self.winfo_width() // 2)
+        y = (self.winfo_screenheight() // 2) - (self.winfo_height() // 2)
+        self.geometry(f"+{x}+{y}")
+        
+        self.attributes("-topmost", True)
+        
+        self.main_frame = ctk.CTkFrame(self, fg_color="white", corner_radius=0)
+        self.main_frame.pack(fill="both", expand=True)
+        
+        self.icon_label = ctk.CTkLabel(self.main_frame, text="⚠", font=("Segoe UI", 40), text_color="#f0ad4e")
+        self.icon_label.place(x=30, y=30)
+        
+        self.msg_label = ctk.CTkLabel(self.main_frame, text="Drivers actualizados correctamente.\nEl sistema se reiniciará para aplicar los cambios.", 
+                                      font=("Segoe UI", 12), text_color="black", justify="left")
+        self.msg_label.place(x=90, y=30)
+        
+        self.countdown_label = ctk.CTkLabel(self.main_frame, text=f"Reiniciando en {self.seconds} segundos...", 
+                                            font=("Segoe UI", 12, "bold"), text_color="red")
+        self.countdown_label.place(x=90, y=85)
+        
+        self.bottom_frame = ctk.CTkFrame(self, fg_color="#f0f0f0", height=50, corner_radius=0)
+        self.bottom_frame.pack(fill="x", side="bottom")
+        
+        self.btn = ctk.CTkButton(self.bottom_frame, text="REINICIAR AHORA", width=120, height=30,
+                                 fg_color="#e1e1e1", text_color="black", hover_color="#d0d0d0",
+                                 border_width=1, border_color="#adadad", corner_radius=2,
+                                 command=self.do_reboot)
+        self.btn.pack(pady=10)
+        
+        self.tick()
+
+    def tick(self):
+        if self.seconds > 0:
+            self.seconds -= 1
+            self.countdown_label.configure(text=f"Reiniciando en {self.seconds} segundos...")
+            self.after(1000, self.tick)
+        else:
+            self.do_reboot()
+
+    def do_reboot(self):
+        import os
+        os.system("shutdown /r /t 0")
+
 class DriversView(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master, fg_color=COLOR_BG)
@@ -1392,38 +1446,35 @@ class DriversView(ctk.CTkFrame):
         from driver_updater import DriverUpdater
         updater = DriverUpdater(lambda m: self.after(0, lambda msg=m: self.lbl_scan_desc.configure(text=msg)))
         
-        # Paso 1: Puntos de restauración (Seguridad)
         updater.create_restore_point()
         
-        # Paso 2: Instalación vía Windows Update
         do_restart = self.chk_restart.get() == 1
-        proc = updater.install_all_drivers_ps(auto_reboot=do_restart)
+        # IMPORTANTE: Esperamos al proceso para saber cuándo terminó (wait=True)
+        # No usamos auto_reboot de PS para controlar el aviso desde Python
+        success = updater.install_all_drivers_ps(auto_reboot=False, wait=True)
         
-        if proc:
-            self.after(0, lambda: self._complete_update_pro())
-        else:
-            self.after(0, lambda: self.lbl_scan_desc.configure(text="Error al iniciar la actualización."))
+        self.after(0, lambda: self._complete_update_pro(success, do_restart))
 
-    def _complete_update_pro(self):
+    def _complete_update_pro(self, success, do_restart):
         self.progress.stop()
         self.progress.set(1)
-        self.lbl_status_main.configure(text="¡Actualización iniciada en segundo plano con éxito!", text_color="#00dd00")
-        self.btn_huge_scan.configure(state="disabled", text="Completado")
         self.prog_panel.pack_forget()
+        
+        if success:
+            if do_restart:
+                # Lanzar ventana blanca con cuenta regresiva
+                RebootCountdown(self)
+            else:
+                self.lbl_status_main.configure(text="¡Instalación completada con éxito!", text_color="#00dd00")
+                messagebox.showinfo("YKZ Driver Engine", "Los drivers se han instalado correctamente.\n\nSe recomienda reiniciar el sistema manualmente.")
+                self.scan_drivers_pro() # Refrescar lista
+        else:
+            self.lbl_status_main.configure(text="Error durante la instalación.", text_color="red")
+            self.btn_huge_scan.configure(state="normal", text="REINTENTAR")
 
     def _trigger_windows_restart(self):
-        import time, os, ctypes
-        try:
-            from win11toast import toast
-            toast("Actualización", "El PC se reiniciará automáticamente porque los drivers se actualizaron")
-        except:
-            pass
-        
-        # Notification requested by the user: clean style box
-        # Notification requested by the user: clean style box
-        threading.Thread(target=lambda: ctypes.windll.user32.MessageBoxW(0, "El sistema se reiniciará en 10 segundos...", "YKZ", 64), daemon=True).start()
-        time.sleep(10)
-        os.system("shutdown /r /t 1")
+        # Este método ya no se usa directamente por el contador manual
+        pass
         
 
 

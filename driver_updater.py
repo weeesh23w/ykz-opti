@@ -33,41 +33,41 @@ class DriverUpdater:
         time.sleep(1)
         return True
 
-    def install_all_drivers_ps(self, auto_reboot=False):
+    def install_all_drivers_ps(self, auto_reboot=False, wait=False):
         self.log("Iniciando instalación automática mediante Windows Update...")
         
         reboot_flag = "-AutoReboot" if auto_reboot else ""
         
         script = f'''
         Set-ExecutionPolicy Bypass -Scope Process -Force
-        # Asegurar que el proveedor NuGet esté presente
         if (!(Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {{
             Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false
         }}
-        # Instalar módulo oficial si no existe
         if (!(Get-Module -ListAvailable PSWindowsUpdate)) {{
             Install-Module PSWindowsUpdate -Force -Confirm:$false -SkipPublisherCheck
         }}
         Import-Module PSWindowsUpdate
-        
-        # Buscar e instalar específicamente drivers del catálogo oficial de Microsoft (Nvidia, AMD, Intel, etc)
         Get-WindowsUpdate -MicrosoftUpdate -Category "Drivers" -AcceptAll -Install -IgnoreReboot {reboot_flag} -Verbose
         '''
         
         try:
-            # Escribir script temporal
             temp_ps = os.path.join(os.environ['TEMP'], 'ykz_update.ps1')
             with open(temp_ps, 'w') as f:
                 f.write(script)
             
             self.log("Ejecutando proceso de instalación silenciosa...")
-            proc = subprocess.Popen(["powershell.exe", "-File", temp_ps], 
+            proc = subprocess.Popen(["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", temp_ps], 
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                                    text=True, creationflags=0x08000000)
+            
+            if wait:
+                stdout, stderr = proc.communicate()
+                return proc.returncode == 0
+            
             return proc
         except Exception as e:
             self.log(f"Fallo crítico en el proceso de actualización: {e}")
-            return None
+            return None if not wait else False
 
     def install_local_inf(self, inf_path):
         """Usa pnputil para instalar un driver local"""

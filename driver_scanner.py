@@ -95,12 +95,13 @@ class DriverScanner:
 
             is_gpu = any(x in name.upper() for x in ["NVIDIA", "AMD", "RADEON", "INTEL(R) UHD", "INTEL(R) IRIS"])
             
-            # Simular verificación de API (Nvidia/AMD/MS Update)
+            # Simular verificación de API (Nvidia/AMD/MS Update) -> AHORA REAL
             status = "Al día"
-            if is_gpu:
-                self.log(f"Consultando API de {manufacturer} para {name}...")
-                status = "Update Available" # Forzamos detección en GPU para demostración
-            elif any(x in name.upper() for x in ["NETWORK", "WI-FI", "AUDIO"]):
+            if not hasattr(self, 'available_updates'):
+                self.log("Consultando base de datos de Windows Update (este proceso puede tardar)...")
+                self.available_updates = self.get_real_updates()
+
+            if any(upd.lower() in name.lower() for upd in self.available_updates):
                 status = "Update Available"
             
             drivers.append({
@@ -117,3 +118,26 @@ class DriverScanner:
                 self.log(f"Procesando dispositivos: {int((i/total)*100)}%")
             
         return drivers
+
+    def get_real_updates(self):
+        """Consulta real al catálogo de Microsoft Update mediante PowerShell"""
+        script = '''
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        if (!(Get-Module -ListAvailable PSWindowsUpdate)) {
+            Install-Module PSWindowsUpdate -Force -Confirm:$false -SkipPublisherCheck
+        }
+        Import-Module PSWindowsUpdate
+        Get-WindowsUpdate -MicrosoftUpdate -Category "Drivers" -ListOnly | Select-Object -ExpandProperty Title
+        '''
+        try:
+            import subprocess
+            proc = subprocess.run(["powershell.exe", "-Command", script], 
+                                  capture_output=True, text=True, creationflags=0x08000000)
+            if proc.returncode == 0:
+                # Limpiar los nombres de los drivers encontrados
+                updates = [line.strip() for line in proc.stdout.split('\n') if line.strip()]
+                self.log(f"Se encontraron {len(updates)} actualizaciones reales disponibles.")
+                return updates
+        except Exception as e:
+            self.log(f"Error al buscar actualizaciones reales: {e}")
+        return []

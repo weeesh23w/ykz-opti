@@ -107,6 +107,64 @@ class DriverUI(ctk.CTk):
                                           fg_color=self.accent_color, hover_color="#6221cc")
         self.reboot_chk.pack(side="right", padx=10)
 
+class RebootCountdown(ctk.CTkToplevel):
+    def __init__(self, parent, seconds=10):
+        super().__init__(parent)
+        self.title("YKZ Optimizer")
+        self.geometry("400x180")
+        self.resizable(False, False)
+        self.configure(fg_color="white")
+        self.seconds = seconds
+        
+        # Centrar ventana
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (self.winfo_width() // 2)
+        y = (self.winfo_screenheight() // 2) - (self.winfo_height() // 2)
+        self.geometry(f"+{x}+{y}")
+        
+        # Mantener al frente
+        self.attributes("-topmost", True)
+        
+        # Estilo "Clásico Windows"
+        self.main_frame = ctk.CTkFrame(self, fg_color="white", corner_radius=0)
+        self.main_frame.pack(fill="both", expand=True)
+        
+        # Icono de Advertencia (Simulado con label)
+        self.icon_label = ctk.CTkLabel(self.main_frame, text="⚠", font=("Segoe UI", 40), text_color="#f0ad4e")
+        self.icon_label.place(x=30, y=30)
+        
+        self.msg_label = ctk.CTkLabel(self.main_frame, text="Drivers actualizados correctamente.\nEl sistema se reiniciará para aplicar los cambios.", 
+                                      font=("Segoe UI", 12), text_color="black", justify="left")
+        self.msg_label.place(x=90, y=30)
+        
+        self.countdown_label = ctk.CTkLabel(self.main_frame, text=f"Reiniciando en {self.seconds} segundos...", 
+                                            font=("Segoe UI", 12, "bold"), text_color="red")
+        self.countdown_label.place(x=90, y=85)
+        
+        # Botón inferior
+        self.bottom_frame = ctk.CTkFrame(self, fg_color="#f0f0f0", height=50, corner_radius=0)
+        self.bottom_frame.pack(fill="x", side="bottom")
+        
+        self.btn = ctk.CTkButton(self.bottom_frame, text="REINICIAR AHORA", width=120, height=30,
+                                 fg_color="#e1e1e1", text_color="black", hover_color="#d0d0d0",
+                                 border_width=1, border_color="#adadad", corner_radius=2,
+                                 command=self.do_reboot)
+        self.btn.pack(pady=10)
+        
+        self.tick()
+
+    def tick(self):
+        if self.seconds > 0:
+            self.seconds -= 1
+            self.countdown_label.configure(text=f"Reiniciando en {self.seconds} segundos...")
+            self.after(1000, self.tick)
+        else:
+            self.do_reboot()
+
+    def do_reboot(self):
+        import os
+        os.system("shutdown /r /t 0")
+
     def update_status(self, msg):
         self.status_lbl.configure(text=msg)
 
@@ -153,13 +211,30 @@ class DriverUI(ctk.CTk):
     def run_update_thread(self):
         self.updater.create_restore_point()
         do_reboot = self.reboot_chk.get() == 1
-        proc = self.updater.install_all_drivers_ps(auto_reboot=do_reboot)
         
-        if proc:
-            self.update_status("Instalando drivers en segundo plano... No apague el PC.")
-            # En una app real monitorearíamos el proceso de salida
+        # IMPORTANTE: No usamos -AutoReboot en PS para que Python controle el contador
+        success = self.updater.install_all_drivers_ps(auto_reboot=False, wait=True)
+        
+        self.after(0, lambda: self.finish_update(success, do_reboot))
+
+    def finish_update(self, success, do_reboot):
+        self.progress.stop()
+        self.progress.set(1)
+        self.update_all_btn.configure(state="normal")
+        self.scan_btn.configure(state="normal")
+        
+        if success:
+            if do_reboot:
+                # Lanzar ventana de cuenta regresiva blanca
+                RebootCountdown(self)
+            else:
+                # Mostrar popup normal
+                self.update_status("¡INSTALACIÓN COMPLETADA! Todos los drivers están al día.")
+                from tkinter import messagebox
+                messagebox.showinfo("YKZ Driver Engine", "Los drivers se han instalado correctamente.\n\nSe recomienda reiniciar el sistema manualmente si no lo hizo de forma automática.")
+                self.start_scan()
         else:
-            self.update_status("Error al iniciar el proceso de actualización.")
+            self.update_status("Error o proceso cancelado durante la instalación.")
 
 if __name__ == "__main__":
     app = DriverUI()
