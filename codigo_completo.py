@@ -289,6 +289,92 @@ LANG = {
     }
 }
 
+# --- License Management ---
+class LicenseManager:
+    LICENSE_FILE = os.path.join(os.getenv('APPDATA'), "ykz_license.json")
+    # For now, we use a simple hardcoded key or a hash. 
+    # To be more secure, this should check an online API.
+    VALID_KEYS = ["YKZ-ELITE-2026", "YKZ-PRO-LAUNCH", "TEST-KEY-123"]
+
+    @staticmethod
+    def validate(key):
+        return key in LicenseManager.VALID_KEYS
+
+    @staticmethod
+    def save(key):
+        try:
+            with open(LicenseManager.LICENSE_FILE, "w") as f:
+                json.dump({"key": key, "activated": True}, f)
+        except:
+            pass
+
+    @staticmethod
+    def load():
+        if os.path.exists(LicenseManager.LICENSE_FILE):
+            try:
+                with open(LicenseManager.LICENSE_FILE, "r") as f:
+                    data = json.load(f)
+                    return data.get("key")
+            except:
+                return None
+        return None
+
+class LoginWindow(ctk.CTkToplevel):
+    def __init__(self, parent, on_success):
+        super().__init__(parent)
+        self.on_success = on_success
+        self.geometry("400x320")
+        self.overrideredirect(True)
+        
+        # Try to get language from parent or default to ES
+        self.lang_code = "ES"
+        try:
+            if hasattr(parent, "current_lang"):
+                self.lang_code = parent.current_lang
+        except: pass
+        l = LANG[self.lang_code]
+
+        self.title(l["login_title"])
+        self.configure(fg_color=COLOR_BG)
+        
+        ws = self.winfo_screenwidth()
+        hs = self.winfo_screenheight()
+        x = (ws/2) - (400/2)
+        y = (hs/2) - (320/2)
+        self.geometry('+%d+%d' % (x, y))
+        self.grab_set()
+        self.attributes("-topmost", True)
+        
+        ctk.CTkLabel(self, text="YKZ OPTI", font=("Arial", 24, "bold"), text_color=COLOR_ACCENT).pack(pady=(40, 10))
+        ctk.CTkLabel(self, text=l["login_desc"], text_color="white").pack(pady=5)
+        
+        self.entry = ctk.CTkEntry(self, width=280, placeholder_text=l["login_ph"], justify="center", height=40)
+        self.entry.pack(pady=15)
+        
+        ctk.CTkButton(self, text=l["login_btn"], width=280, height=45, font=("Arial", 14, "bold"), fg_color=COLOR_ACCENT, hover_color=COLOR_ACCENT_HOVER, command=self.check_key).pack(pady=10)
+        
+        self.lbl_msg = ctk.CTkLabel(self, text="", text_color="red")
+        self.lbl_msg.pack(pady=10)
+        
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def check_key(self):
+        l = LANG[self.lang_code]
+        key = self.entry.get().strip().upper()
+        if LicenseManager.validate(key):
+            LicenseManager.save(key)
+            self.lbl_msg.configure(text=l["login_success"], text_color="green")
+            self.after(1000, self.finish)
+        else:
+            self.lbl_msg.configure(text=l["login_fail"], text_color="red")
+
+    def finish(self):
+        self.destroy()
+        self.on_success()
+
+    def on_close(self):
+        sys.exit(0)
+
 class GlitchLogo(ctk.CTkFrame):
     """
     Logo widget that renders a polished logo using an optional icon from resources

@@ -33,7 +33,20 @@ const translations = {
         gal2_desc: "Optimización Extrema",
         gal3_title: "Driver Center",
         gal3_desc: "Actualización Inteligente",
-        footer_source: "Código Fuente"
+        gal3_desc: "Actualización Inteligente",
+        footer_source: "Código Fuente",
+        comp_title: "Compara Versiones",
+        comp_feature: "Característica",
+        comp_free: "Gratis",
+        comp_premium: "Premium",
+        feat_basic: "Optimización Básica",
+        feat_clean: "Limpieza de Temporales",
+        feat_gaming: "Boost de Juegos (Valorant/FiveM)",
+        feat_drivers: "Centro de Drivers Pro",
+        feat_input: "Input Lag Extremo (FilterKeys)",
+        feat_laptop: "Rendimiento Laptop Advanced",
+        feat_security: "Soporte VIP & Actualizaciones",
+        feat_activation: "Activación de por vida"
     },
     en: {
         page_title: "YKZ Premium Optimizer | Elite Performance Suite",
@@ -69,7 +82,20 @@ const translations = {
         gal2_desc: "Extreme Optimization",
         gal3_title: "Driver Center",
         gal3_desc: "Smart Updates",
-        footer_source: "Source Code"
+        gal3_desc: "Smart Updates",
+        footer_source: "Source Code",
+        comp_title: "Compare Versions",
+        comp_feature: "Feature",
+        comp_free: "Free",
+        comp_premium: "Premium",
+        feat_basic: "Basic Optimization",
+        feat_clean: "Temporary Files Cleaning",
+        feat_gaming: "Gaming Boost (Valorant/FiveM)",
+        feat_drivers: "Pro Driver Center",
+        feat_input: "Extreme Input Lag (FilterKeys)",
+        feat_laptop: "Advanced Laptop Performance",
+        feat_security: "VIP Support & Updates",
+        feat_activation: "Lifetime Activation"
     }
 };
 

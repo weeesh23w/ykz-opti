@@ -315,6 +315,54 @@ footer {
 .hero p { animation-delay: 0.4s; }
 .hero .glow-btn { animation-delay: 0.6s; }
 
+/* Comparison Table */
+.comparison-container {
+    margin-top: 50px;
+    overflow-x: auto;
+}
+
+.comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(18, 0, 18, 0.4);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid rgba(155, 48, 255, 0.1);
+}
+
+.comp-table th, .comp-table td {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(155, 48, 255, 0.1);
+}
+
+.comp-table th {
+    background: rgba(155, 48, 255, 0.1);
+    color: white;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+.comp-table td:first-child {
+    text-align: left;
+    font-weight: 400;
+    color: var(--text-sub);
+}
+
+.comp-table tr:last-child td {
+    border-bottom: none;
+}
+
+.comp-table i.fa-check { color: #00ff88; }
+.comp-table i.fa-times { color: #ff4444; opacity: 0.5; }
+
+.premium-col {
+    background: rgba(155, 48, 255, 0.05);
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .hero h1 {
