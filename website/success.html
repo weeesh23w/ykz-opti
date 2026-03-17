@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Pago Exitoso! | YKZ Premium</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .success-box {
+            background: rgba(155, 48, 255, 0.1);
+            border: 1px solid var(--accent-color);
+            padding: 50px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 100px auto;
+            text-align: center;
+            animation: fadeInUp 1s ease;
+        }
+        .license-code {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px dashed var(--accent-color);
+            padding: 20px;
+            font-family: monospace;
+            font-size: 1.5rem;
+            color: white;
+            margin: 30px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .license-code:hover {
+            background: rgba(155, 48, 255, 0.2);
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-box glass">
+            <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--accent-color); margin-bottom: 20px;"></i>
+            <h1 style="color: white; margin-bottom: 10px;">¡Gracias por tu compra!</h1>
+            <p style="color: var(--text-sub);">Ya eres parte de la elite. Copia tu código y actívalo en el programa.</p>
+            
+            <div class="license-code" id="code-box" onclick="copyCode()">
+                YKZ-ELITE-2026
+            </div>
+            <p style="font-size: 0.9rem; color: var(--accent-color);">Haz clic para copiar</p>
+
+            <div style="margin-top: 40px;">
+                <a href="index.html" class="glass-toggle" style="padding: 10px 20px;">Volver al inicio</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyCode() {
+            const code = document.getElementById('code-box').innerText;
+            navigator.clipboard.writeText(code);
+            alert('¡Código copiado al portapapeles!');
+        }
+    </script>
+</body>
+</html>
