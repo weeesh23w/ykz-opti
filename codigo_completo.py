@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.9.2"
+CURRENT_VERSION = "2.9.3"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -471,6 +471,7 @@ def generate_rendered_ykz(path):
     except Exception:
         return False
 
+
 # --- Logging ---
 def get_resource_path(relative_path):
     try:
@@ -495,100 +496,6 @@ import tempfile
 log_file = os.path.join(tempfile.gettempdir(), "debug_smart.txt")
 logging.basicConfig(filename=log_file, level=logging.DEBUG, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
-
-# --- Music Engine ---
-class MusicPlayer:
-    def __init__(self):
-        self.alias = "bg_music"
-        self.playing = False
-        self.should_stop = False
-        self.t = None
-
-    def _play_loop(self):
-        import os
-        import ctypes
-        import random
-        import glob
-        import time
-        
-        # search first in bundled resources, then app dir
-        res_dir = get_resource_path(RESOURCE_DIR)
-
-        while not self.should_stop:
-            try:
-                # Buscar todos los archivos .mp3 en la carpeta resources
-                tracks = glob.glob(os.path.join(res_dir, "*.mp3"))
-
-                # Si no hay en resources, buscar en la ruta de la app
-                if not tracks:
-                    app_dir = get_app_path()
-                    tracks = glob.glob(os.path.join(app_dir, "*.mp3"))
-
-                # Si aún no hay, comprobar si existe un sample mp3 en resources
-                if not tracks:
-                    sample = os.path.join(res_dir, "sample.mp3")
-                    if os.path.exists(sample):
-                        tracks = [sample]
-
-                if not tracks:
-                    logging.info("No MP3 files found.")
-                    break
-                    
-                # Elegir una canción al azar
-                selected_path = random.choice(tracks)
-
-                if self.should_stop or not os.path.exists(selected_path):
-                    break
-
-                ctypes.windll.winmm.mciSendStringW(f"close {self.alias}", None, 0, 0)
-                cmd_open = f"open \"{selected_path}\" type mpegvideo alias {self.alias}"
-                ctypes.windll.winmm.mciSendStringW(cmd_open, None, 0, 0)
-                
-                if self.should_stop:
-                    ctypes.windll.winmm.mciSendStringW(f"close {self.alias}", None, 0, 0)
-                    break
-                
-                ctypes.windll.winmm.mciSendStringW(f"play {self.alias}", None, 0, 0)
-                self.playing = True
-                logging.info(f"Music started: {os.path.basename(selected_path)}")
-                
-                # Check status periodically
-                while not self.should_stop:
-                    time.sleep(1)
-                    buffer = ctypes.create_unicode_buffer(128)
-                    ctypes.windll.winmm.mciSendStringW(f"status {self.alias} mode", buffer, 128, 0)
-                    if buffer.value.lower() != "playing":
-                        break
-                        
-            except Exception as e:
-                logging.error(f"Music error: {e}")
-                time.sleep(2)
-        
-        # Explicit cleanup from the thread that opened the MCI device
-        try:
-            ctypes.windll.winmm.mciSendStringW(f"stop {self.alias}", None, 0, 0)
-            ctypes.windll.winmm.mciSendStringW(f"close {self.alias}", None, 0, 0)
-        except Exception as e:
-            logging.error(f"Cleanup error: {e}")
-
-    def play(self):
-        self.should_stop = False
-        import threading
-        if self.t is None or not self.t.is_alive():
-            self.t = threading.Thread(target=self._play_loop, daemon=True)
-            self.t.start()
-
-    def stop(self):
-        self.should_stop = True
-        try:
-            import ctypes
-            # Try to stop it from main thread just in case it's allowed
-            ctypes.windll.winmm.mciSendStringW(f"stop {self.alias}", None, 0, 0)
-            ctypes.windll.winmm.mciSendStringW(f"close {self.alias}", None, 0, 0)
-            self.playing = False
-            logging.info("Music stop requested")
-        except Exception as e:
-            logging.error(f"Music stop error: {e}")
 
 # --- Splash Screen (Top Level) ---
 class IntroWindow(ctk.CTkToplevel):
@@ -624,8 +531,6 @@ class IntroWindow(ctk.CTkToplevel):
         self.lbl_pct = ctk.CTkLabel(self, text="0%", font=("Roboto", 12, "bold"), text_color=splash_accent)
         self.lbl_pct.pack()
 
-        self.music = MusicPlayer()
-        self.music.play()
         self.step = 0
         self.after(500, self.animate_loading)
 
@@ -644,11 +549,18 @@ class IntroWindow(ctk.CTkToplevel):
         try:
             if os.path.exists(img_path):
                 pil_img = Image.open(img_path)
-                # Dynamic resizing to perfectly fit the 500x600 top level window aesthetics
+                # Fixed resizing logic to prevent stretching
+                orig_w, orig_h = pil_img.size
                 target_w = 400
                 target_h = 350
-                pil_img = pil_img.resize((target_w, target_h), Image.Resampling.LANCZOS)
-                self.img_tk = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(target_w, target_h))
+                
+                # Calculate new size while maintaining aspect ratio
+                ratio = min(target_w/orig_w, target_h/orig_h)
+                new_w = int(orig_w * ratio)
+                new_h = int(orig_h * ratio)
+                
+                pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                self.img_tk = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(new_w, new_h))
                 self.lbl_img = ctk.CTkLabel(self, text="", image=self.img_tk)
                 self.lbl_img.pack(pady=(20, 10))
             else:
@@ -676,7 +588,6 @@ class IntroWindow(ctk.CTkToplevel):
             self.finish_sequence()
 
     def finish_sequence(self):
-        self.music.stop()
         self.destroy()
         self.on_complete()
 

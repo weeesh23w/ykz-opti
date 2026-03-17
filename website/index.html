@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- LAYOUT_RESTRUCTURE_V2 + i18n -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="page_title">YKZ Premium Optimizer | Elite Performance Suite</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/ykz_symbol.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="assets/ykz_logo_rendered.png" alt="YKZ Optimizer Logo">
+        </div>
+        <nav style="display: flex; align-items: center; gap: 20px;">
+            <div class="lang-switcher">
+                <button id="lang-btn" class="glass-toggle">
+                    <i class="fas fa-globe"></i> <span id="current-lang">ES</span>
+                </button>
+                <div class="lang-dropdown glass">
+                    <div class="lang-option" onclick="setLanguage('es')">Español</div>
+                    <div class="lang-option" onclick="setLanguage('en')">English</div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Section: Why YKZ -->
+    <section class="container" style="background: rgba(155, 48, 255, 0.05); border-radius: 0 0 30px 30px; margin-top: 80px;">
+        <h2 class="section-title" data-i18n="why_title">¿Por qué YKZ Optimizer?</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: center; justify-content: center;">
+            <div style="flex: 1; min-width: 300px;">
+                <p style="font-size: 1.2rem; color: var(--text-sub); margin-bottom: 20px;" data-i18n="why_desc">
+                    Diseñado con una interfaz intuitiva y potente, YKZ Optimizer combina años de experiencia en tuning de Windows en una sola suite. No solo limpia, sino que recalibra tu sistema para obtener la máxima estabilidad y fluidez posible.
+                </p>
+                <ul style="list-style: none; color: var(--text-main);">
+                    <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--accent-color); margin-right: 10px;"></i> <span data-i18n="why_item1">Actualizaciones constantes</span></li>
+                    <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--accent-color); margin-right: 10px;"></i> <span data-i18n="why_item2">Comunidad activa</span></li>
+                    <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--accent-color); margin-right: 10px;"></i> <span data-i18n="why_item3">Compatible con Windows 10 & 11</span></li>
+                </ul>
+            </div>
+            <div style="flex: 1; min-width: 300px; text-align: center;">
+                 <img src="assets/ykz_symbol.png" alt="YKZ Symbol" style="max-width: 100%; height: auto; opacity: 0.8; filter: drop-shadow(0 0 20px rgba(155, 48, 255, 0.3));">
+            </div>
+        </div>
+    </section>
+
+    <!-- Branding Intro -->
+    <section class="hero" style="height: auto; padding-top: 50px; padding-bottom: 50px;">
+        <h1 data-i18n="hero_title">YKZ Premium Optimizer</h1>
+        <p data-i18n="hero_desc">YKZ Optimizer es la herramienta definitiva para maximizar el rendimiento de tu sistema, reducir la latencia y desbloquear todo el potencial de tu hardware.</p>
+    </section>
+
+    <!-- Features Section -->
+    <div class="container">
+        <h2 class="section-title" data-i18n="features_title">Características Principales</h2>
+        <div class="features-grid">
+            <div class="feature-card glass">
+                <i class="fas fa-rocket"></i>
+                <h3 data-i18n="feat1_title">Optimización Gamers</h3>
+                <p data-i18n="feat1_desc">Configuraciones extremas para Valorant, CS2 y FiveM. Prioridad de CPU y limpieza de caché automática.</p>
+            </div>
+            <div class="feature-card glass">
+                <i class="fas fa-microchip"></i>
+                <h3 data-i18n="feat2_title">Control de GPU</h3>
+                <p data-i18n="feat2_desc">NVIDIA & AMD Center. MSI Mode, limpieza de drivers y optimización de latencia DPC.</p>
+            </div>
+            <div class="feature-card glass">
+                <i class="fas fa-broom"></i>
+                <h3 data-i18n="feat3_title">Limpieza Profunda</h3>
+                <p data-i18n="feat3_desc">Elimina archivos basura, temporales y optimiza el registro de Windows sin riesgos.</p>
+            </div>
+            <div class="feature-card glass">
+                <i class="fas fa-bolt"></i>
+                <h3 data-i18n="feat4_title">Input Lag Extremo</h3>
+                <p data-i18n="feat4_desc">FilterKeys Fix, USB Polling Rate y System Timer Resolution para la respuesta más rápida.</p>
+            </div>
+            <div class="feature-card glass">
+                <i class="fas fa-laptop"></i>
+                <h3 data-i18n="feat5_title">Performance para Laptops</h3>
+                <p data-i18n="feat5_desc">Perfiles específicos para portátiles, control de energía y mitigación de thermal throttling.</p>
+            </div>
+            <div class="feature-card glass">
+                <i class="fas fa-shield-alt"></i>
+                <h3 data-i18n="feat6_title">Seguridad y Debloat</h3>
+                <p data-i18n="feat6_desc">Elimina bloatware innecesario de Windows y crea puntos de restauración antes de cada cambio.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gallery & Download Section -->
+    <div class="container" style="padding-top: 0; text-align: center;">
+        <h2 class="section-title" data-i18n="gallery_title">Nuestra Interfaz</h2>
+        <p style="color: var(--text-sub); margin-bottom: 20px;" data-i18n="gallery_desc">Capturas reales del optimizador en acción.</p>
+        
+        <!-- DOWNLOAD INFO -->
+        <div style="margin-bottom: 50px; background: rgba(155, 48, 255, 0.1); padding: 40px; border-radius: 20px; border: 1px solid var(--accent-color);">
+            <h3 style="color: white; margin-bottom: 15px;" data-i18n="dl_title">¿Listo para optimizar tu PC?</h3>
+            <p style="font-size: 1.1rem; color: var(--text-sub); margin-bottom: 25px;" data-i18n="dl_desc">Descarga la última versión de YKZ Premium Optimizer y siente la diferencia.</p>
+            <a href="assets/ykz_optimizer.exe" download class="glow-btn" data-i18n="dl_btn">Descargar</a>
+        </div>
+
+        <div class="gallery-grid">
+            <div class="gallery-item glass">
+                <img src="assets/img1.png" alt="Dashboard">
+                <div class="gallery-info">
+                    <h4 data-i18n="gal1_title">Resumen del Sistema</h4>
+                    <span data-i18n="gal1_desc">Hardware & Componentes</span>
+                </div>
+            </div>
+            <div class="gallery-item glass">
+                <img src="assets/img2.png" alt="Gaming Boost">
+                <div class="gallery-info">
+                    <h4 data-i18n="gal2_title">Game Boosters</h4>
+                    <span data-i18n="gal2_desc">Optimización Extrema</span>
+                </div>
+            </div>
+            <div class="gallery-item glass">
+                <img src="assets/img3.png" alt="Drivers">
+                <div class="gallery-info">
+                    <h4 data-i18n="gal3_title">Driver Center</h4>
+                    <span data-i18n="gal3_desc">Actualización Inteligente</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 YKZ Optimizer. Powering the gaming community.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
