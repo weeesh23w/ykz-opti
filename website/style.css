@@ -74,6 +74,13 @@ body {
     transform: translateY(-2px);
 }
 
+.glass-toggle {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Layout Sections */
 header {
     height: 80px;
