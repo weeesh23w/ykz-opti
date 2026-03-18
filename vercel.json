@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/", "destination": "/website/index.html" },
+    { "source": "/(.*)\\.(css|js|png|jpg|jpeg|gif|svg|ico)", "destination": "/website/$1.$2" },
+    { "source": "/success.html", "destination": "/website/success.html" },
+    { "source": "/assets/(.*)", "destination": "/website/assets/$1" }
+  ]
+}
