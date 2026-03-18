@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.1.0"
+CURRENT_VERSION = "3.1.2"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -2640,7 +2640,24 @@ def create_start_menu_shortcut():
         subprocess.run(["powershell", "-Command", ps_script], capture_output=True, creationflags=0x08000000)
     except: pass
 
+def copy_to_desktop():
+    """Copia el ejecutable al escritorio si no está allí."""
+    try:
+        if not getattr(sys, 'frozen', False): return
+        app_path = sys.executable
+        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+        target_path = os.path.join(desktop_path, "YKZ Optimizer.exe")
+        
+        if os.path.abspath(app_path).lower() == os.path.abspath(target_path).lower():
+            return # Ya estamos en el escritorio
+            
+        if not os.path.exists(target_path):
+            import shutil
+            shutil.copy2(app_path, target_path)
+    except: pass
+
 if __name__ == "__main__":
     create_start_menu_shortcut()
+    copy_to_desktop()
     app = PurpleApp()
     app.mainloop()
