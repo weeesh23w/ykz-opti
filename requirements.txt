@@ -1,1 +1,2 @@
-# Vercel Python Runtime - Required for serverless functions
+requests
+urllib3
