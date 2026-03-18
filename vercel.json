@@ -1,13 +1,10 @@
 {
-  "routes": [
-    { "src": "/api/check",    "dest": "/api/check.py" },
-    { "src": "/api/activate", "dest": "/api/activate.py" },
-    { "src": "/api/generate", "dest": "/api/generate.py" },
-    { "src": "/success.html", "dest": "/website/success.html" },
-    { "src": "/success",      "dest": "/website/success.html" },
-    { "src": "/assets/(.*)",  "dest": "/website/assets/$1" },
-    { "src": "/style\\.css",  "dest": "/website/style.css" },
-    { "src": "/script\\.js",  "dest": "/website/script.js" },
-    { "src": "/",             "dest": "/website/index.html" }
+  "rewrites": [
+    { "source": "/success.html", "destination": "/website/success.html" },
+    { "source": "/success",      "destination": "/website/success.html" },
+    { "source": "/assets/(.*)", "destination": "/website/assets/$1" },
+    { "source": "/style.css",   "destination": "/website/style.css" },
+    { "source": "/script.js",   "destination": "/website/script.js" },
+    { "source": "/",            "destination": "/website/index.html" }
   ]
 }
