@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.9.4"
+CURRENT_VERSION = "2.9.5"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -1837,7 +1837,7 @@ class PurpleApp(ctk.CTk):
         self.set_icon()
         self.check_security()
         self.withdraw()
-        self.check_license_flow()
+        self.after(100, self.check_license_flow)
 
     def check_security(self):
         """Basic Anti-Debug and Integrity Check"""
@@ -2039,6 +2039,7 @@ class PurpleApp(ctk.CTk):
 
         
         self.btn_home = self.create_nav_btn(LANG[self.current_lang]["nav_home"], self.show_home)
+        self.btn_activa = self.create_nav_btn(LANG[self.current_lang]["nav_activa"], self.show_activa)
         self.btn_opti = self.create_nav_btn(LANG[self.current_lang]["nav_opti"], self.show_opti)
         self.btn_gaming = self.create_nav_btn(LANG[self.current_lang]["nav_gaming"], self.show_gaming)
         self.btn_input = self.create_nav_btn(LANG[self.current_lang]["nav_input"], self.show_input)
@@ -2055,7 +2056,6 @@ class PurpleApp(ctk.CTk):
         self.btn_drivers = self.create_nav_btn(LANG[self.current_lang]["nav_drivers"], self.show_drivers)
         self.btn_repair = self.create_nav_btn(LANG[self.current_lang]["nav_repair"], self.show_repair)
         self.btn_power = self.create_nav_btn(LANG[self.current_lang]["nav_power"], self.show_power)
-        self.btn_activa = self.create_nav_btn(LANG[self.current_lang]["nav_activa"], self.show_activa)
         
         ctk.CTkFrame(self.sidebar, height=1, fg_color="#330033").pack(fill="x", padx=20, pady=10)
         
