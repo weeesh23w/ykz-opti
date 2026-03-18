@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.0.0"
+CURRENT_VERSION = "3.1.0"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -366,7 +366,7 @@ class LoginWindow(ctk.CTkToplevel):
     def __init__(self, parent, on_success):
         super().__init__(parent)
         self.on_success = on_success
-        self.geometry("400x320")
+        self.geometry("450x450")
         self.overrideredirect(True)
         
         # Try to get language from parent or default to ES
@@ -377,46 +377,77 @@ class LoginWindow(ctk.CTkToplevel):
         except: pass
         l = LANG[self.lang_code]
 
-        self.title(l["login_title"])
         self.configure(fg_color=COLOR_BG)
         
+        # Centering
         ws = self.winfo_screenwidth()
         hs = self.winfo_screenheight()
-        x = (ws/2) - (400/2)
-        y = (hs/2) - (320/2)
+        x = (ws/2) - (450/2)
+        y = (hs/2) - (450/2)
         self.geometry('+%d+%d' % (x, y))
         self.grab_set()
         self.attributes("-topmost", True)
         
-        ctk.CTkLabel(self, text="YKZ OPTI", font=("Arial", 24, "bold"), text_color=COLOR_ACCENT).pack(pady=(40, 10))
-        ctk.CTkLabel(self, text=l["login_desc"], text_color="white").pack(pady=5)
+        # Main container with border
+        self.main_frame = ctk.CTkFrame(self, fg_color=COLOR_BG, border_color=COLOR_ACCENT, border_width=2, corner_radius=20)
+        self.main_frame.pack(fill="both", expand=True, padx=2, pady=2)
+
+        # Close button
+        self.btn_close = ctk.CTkButton(self.main_frame, text="✕", width=30, height=30, fg_color="transparent", 
+                                      hover_color="#330033", text_color="white", command=lambda: sys.exit(0))
+        self.btn_close.place(x=405, y=10)
         
-        self.entry = ctk.CTkEntry(self, width=280, placeholder_text=l["login_ph"], justify="center", height=40)
-        self.entry.pack(pady=15)
+        # Logo
+        try:
+            self.logo = GlitchLogo(self.main_frame)
+            self.logo.pack(pady=(40, 10))
+        except:
+             ctk.CTkLabel(self.main_frame, text="YKZ OPTI", font=("Arial", 32, "bold"), text_color=COLOR_ACCENT).pack(pady=(40, 10))
         
-        ctk.CTkButton(self, text=l["login_btn"], width=280, height=45, font=("Arial", 14, "bold"), fg_color=COLOR_ACCENT, hover_color=COLOR_ACCENT_HOVER, command=self.check_key).pack(pady=10)
+        ctk.CTkLabel(self.main_frame, text=l["login_desc"], font=("Arial", 14), text_color=COLOR_TEXT_SUB).pack(pady=5)
         
-        self.lbl_msg = ctk.CTkLabel(self, text="", text_color="red")
+        self.entry = ctk.CTkEntry(self.main_frame, width=340, placeholder_text=l["login_ph"], 
+                                 justify="center", height=50, font=("Consolas", 16), 
+                                 fg_color="#100010", border_color="#330033")
+        self.entry.pack(pady=20)
+        
+        self.btn_activate = ctk.CTkButton(self.main_frame, text=l["login_btn"].upper(), width=340, height=55, 
+                                        font=("Arial", 16, "bold"), fg_color=COLOR_ACCENT, 
+                                        hover_color=COLOR_ACCENT_HOVER, command=self.check_key)
+        self.btn_activate.pack(pady=10)
+        
+        self.lbl_msg = ctk.CTkLabel(self.main_frame, text="", font=("Arial", 12))
         self.lbl_msg.pack(pady=10)
-        self.lbl_hwid = ctk.CTkLabel(self, text=f"ID EQUIPO: {LicenseManager.get_hwid()}", font=("Arial", 9), text_color="#555")
-        self.lbl_hwid.pack(side="bottom", pady=5)
-        
-        self.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        self.lbl_hwid = ctk.CTkLabel(self.main_frame, text=f"ID EQUIPO: {LicenseManager.get_hwid()}", 
+                                    font=("Arial", 10), text_color="#333")
+        self.lbl_hwid.pack(side="bottom", pady=20)
 
     def check_key(self):
         l = LANG[self.lang_code]
         key = self.entry.get().strip().upper()
         if not key: return
-        self.lbl_msg.configure(text="Validando...", text_color="white")
+        
+        self.btn_activate.configure(state="disabled", text="VALIDANDO...")
+        self.lbl_msg.configure(text="Conectando con el servidor seguro...", text_color="white")
         self.update()
-        success, msg = LicenseManager.validate(key)
+        
+        def run_val():
+            success, msg = LicenseManager.validate(key)
+            self.after(0, lambda: self.show_result(success, msg, key))
+            
+        threading.Thread(target=run_val, daemon=True).start()
+
+    def show_result(self, success, msg, key):
+        l = LANG[self.lang_code]
+        self.btn_activate.configure(state="normal", text=l["login_btn"].upper())
         if success:
             LicenseManager.save(key)
-            self.lbl_msg.configure(text=l["login_success"], text_color="green")
+            self.lbl_msg.configure(text=l["login_success"], text_color="#00FF00")
             messagebox.showinfo("YKZ OPTI", f"¡Activado!\n{msg}")
             self.after(500, self.finish)
         else:
-            self.lbl_msg.configure(text=msg, text_color="red")
+            self.lbl_msg.configure(text=msg, text_color=COLOR_DANGER)
 
     def finish(self):
         self.destroy()
@@ -2593,5 +2624,23 @@ if __name__ == "__main__":
         ).wait()
         sys.exit(0)
         
+def create_start_menu_shortcut():
+    """Crea un acceso directo en el Menú Inicio para que sea buscable."""
+    try:
+        if not getattr(sys, 'frozen', False): return
+        app_path = sys.executable
+        shortcut_name = "YKZ Optimizer.lnk"
+        programs_path = os.path.join(os.environ["APPDATA"], "Microsoft", "Windows", "Start Menu", "Programs")
+        shortcut_path = os.path.join(programs_path, shortcut_name)
+        
+        if os.path.exists(shortcut_path): return
+        
+        # PowerShell script to create shortcut with icon
+        ps_script = f'$s=(New-Object -COM WScript.Shell).CreateShortcut("{shortcut_path}");$s.TargetPath="{app_path}";$s.WorkingDirectory="{os.path.dirname(app_path)}";$s.Save()'
+        subprocess.run(["powershell", "-Command", ps_script], capture_output=True, creationflags=0x08000000)
+    except: pass
+
+if __name__ == "__main__":
+    create_start_menu_shortcut()
     app = PurpleApp()
     app.mainloop()

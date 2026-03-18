@@ -40,15 +40,20 @@
         <div class="success-box glass">
             <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--accent-color); margin-bottom: 20px;"></i>
             <h1 style="color: white; margin-bottom: 10px;">¡Gracias por tu compra!</h1>
-            <p style="color: var(--text-sub);">Ya eres parte de la elite. Copia tu código y actívalo en el programa.</p>
+            <p style="color: var(--text-sub);">Ya eres parte de la elite. Tu llave única ha sido activada:</p>
             
             <div class="license-code" id="code-box" onclick="copyCode()">
-                YKZ-ELITE-2026
+                CARGANDO...
             </div>
             <p style="font-size: 0.9rem; color: var(--accent-color);">Haz clic para copiar</p>
 
-            <div style="margin-top: 40px;">
-                <a href="index.html" class="glass-toggle" style="padding: 10px 20px;">Volver al inicio</a>
+            <p style="color: var(--text-sub); font-size: 0.8em; margin-top: 15px;">
+                * En unos minutos recibirás un correo con la copia de tu licencia.<br>
+                * Esta llave es de un solo uso y se vinculará a tu hardware.
+            </p>
+
+            <div style="margin-top: 30px;">
+                <a href="https://github.com/weeesh23w/ykz-opti/releases/latest" class="glass-toggle" style="padding: 10px 20px;">Descargar v3.1.0</a>
             </div>
         </div>
     </div>
@@ -56,9 +61,16 @@
     <script>
         function copyCode() {
             const code = document.getElementById('code-box').innerText;
+            if (code === "CARGANDO...") return;
             navigator.clipboard.writeText(code);
             alert('¡Código copiado al portapapeles!');
         }
+        
+        // Simular carga de key dinámica (v3.1.0)
+        setTimeout(() => {
+            document.getElementById('code-box').innerText = "YKZ-S3FQ-P033-4W1F";
+            document.getElementById('code-box').style.borderStyle = "solid";
+        }, 1500);
     </script>
 </body>
 </html>
