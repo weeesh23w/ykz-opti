@@ -1,108 +1,104 @@
+from http.server import BaseHTTPRequestHandler
 import json
 import os
 import urllib.request
 import base64
 from datetime import datetime
 
-def handler(environ, start_response):
-    # CORS headers (needed for browser fetch calls)
-    cors_headers = [
-        ('Content-Type', 'application/json'),
-        ('Access-Control-Allow-Origin', '*'),
-        ('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'),
-        ('Access-Control-Allow-Headers', 'Content-Type'),
-    ]
 
-    # Handle preflight
-    if environ.get('REQUEST_METHOD') == 'OPTIONS':
-        start_response('200 OK', cors_headers)
-        return [b'']
+class handler(BaseHTTPRequestHandler):
 
-    if environ.get('REQUEST_METHOD') != 'POST':
-        start_response('405 Method Not Allowed', cors_headers)
-        return [json.dumps({"error": "Method not allowed"}).encode()]
+    def _send_json(self, status_code, data):
+        body = json.dumps(data).encode('utf-8')
+        self.send_response(status_code)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+        self.wfile.write(body)
 
-    try:
-        request_body_size = int(environ.get('CONTENT_LENGTH', 0))
-        request_body = environ['wsgi.input'].read(request_body_size)
-        body = json.loads(request_body.decode('utf-8'))
+    def do_OPTIONS(self):
+        self._send_json(200, {})
 
-        key = body.get('key', '').strip().upper()
-        hwid = body.get('hwid', '').strip()
-        ip = body.get('ip', environ.get('REMOTE_ADDR', '0.0.0.0'))
+    def do_POST(self):
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(content_length).decode('utf-8')) if content_length > 0 else {}
 
-        if not key or not hwid:
-            start_response('400 Bad Request', cors_headers)
-            return [json.dumps({"error": "Key y HWID son requeridos"}).encode()]
+            key = body.get('key', '').strip().upper()
+            hwid = body.get('hwid', '').strip()
+            ip = body.get('ip', self.client_address[0] if self.client_address else '0.0.0.0')
 
-        GH_TOKEN = os.environ.get('GH_TOKEN')
-        REPO = "weeesh23w/ykz-opti"
-        FILE_PATH = "licencias.json"
+            if not key or not hwid:
+                self._send_json(400, {"error": "Key y HWID son requeridos"})
+                return
 
-        if not GH_TOKEN:
-            start_response('500 Internal Server Error', cors_headers)
-            return [json.dumps({"error": "GH_TOKEN no configurado en el servidor"}).encode()]
+            GH_TOKEN = os.environ.get('GH_TOKEN')
+            REPO = "weeesh23w/ykz-opti"
+            FILE_PATH = "licencias.json"
 
-        # 1. Fetch current licencias.json from GitHub
-        api_url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
-        gh_headers = {
-            "Authorization": f"token {GH_TOKEN}",
-            "Accept": "application/vnd.github.v3+json",
-            "User-Agent": "Vercel-Serverless"
-        }
+            if not GH_TOKEN:
+                self._send_json(500, {"error": "GH_TOKEN no configurado en el servidor"})
+                return
 
-        req = urllib.request.Request(api_url, headers=gh_headers)
-        with urllib.request.urlopen(req, timeout=10) as response:
-            res_data = json.loads(response.read().decode())
-            content = base64.b64decode(res_data['content']).decode('utf-8')
-            sha = res_data['sha']
-            db = json.loads(content)
+            # 1. Fetch licencias.json from GitHub
+            api_url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
+            gh_headers = {
+                "Authorization": f"token {GH_TOKEN}",
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "Vercel-Serverless"
+            }
 
-        # 2. Logic Check
-        keys = db.get('keys', [])
-        used_keys = db.get('used_keys', {})
+            req = urllib.request.Request(api_url, headers=gh_headers)
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res_data = json.loads(response.read().decode())
+                content = base64.b64decode(res_data['content']).decode('utf-8')
+                sha = res_data['sha']
+                db = json.loads(content)
 
-        # Key must exist in the pool (or in issued_keys)
-        issued_keys = db.get('issued_keys', {})
-        all_valid_keys = set(keys) | set(issued_keys.keys())
+            keys = db.get('keys', [])
+            used_keys = db.get('used_keys', {})
+            issued_keys = db.get('issued_keys', {})
 
-        if key not in all_valid_keys:
-            start_response('403 Forbidden', cors_headers)
-            return [json.dumps({"success": False, "error": "Licencia inexistente o inválida"}).encode()]
+            # All valid keys = pool + issued
+            all_valid_keys = set(keys) | set(issued_keys.keys())
 
-        # Check if already activated
-        if key in used_keys:
-            if used_keys[key]['hwid'] == hwid:
-                # Same hardware → allow re-activation
-                start_response('200 OK', cors_headers)
-                return [json.dumps({"success": True, "message": "Re-activación exitosa en tu dispositivo"}).encode()]
-            else:
-                start_response('403 Forbidden', cors_headers)
-                return [json.dumps({"success": False, "error": "Esta licencia ya está activada en otro dispositivo"}).encode()]
+            if key not in all_valid_keys:
+                self._send_json(403, {"success": False, "error": "Licencia inexistente o inválida"})
+                return
 
-        # 3. Register new activation
-        used_keys[key] = {
-            "hwid": hwid,
-            "ip": ip,
-            "date": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        }
-        db['used_keys'] = used_keys
+            # Check if already activated
+            if key in used_keys:
+                if used_keys[key]['hwid'] == hwid:
+                    self._send_json(200, {"success": True, "message": "Re-activación exitosa en tu dispositivo"})
+                    return
+                else:
+                    self._send_json(403, {"success": False, "error": "Esta licencia ya está activada en otro dispositivo"})
+                    return
 
-        # 4. Push update to GitHub
-        new_content = base64.b64encode(json.dumps(db, indent=4).encode()).decode()
-        update_data = json.dumps({
-            "message": f"Activate key {key[:12]}...",
-            "content": new_content,
-            "sha": sha
-        }).encode()
+            # 3. Register new activation
+            used_keys[key] = {
+                "hwid": hwid,
+                "ip": ip,
+                "date": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            }
+            db['used_keys'] = used_keys
 
-        update_req = urllib.request.Request(api_url, data=update_data, headers=gh_headers, method='PUT')
-        with urllib.request.urlopen(update_req, timeout=10):
-            pass
+            # 4. Push update to GitHub
+            new_content = base64.b64encode(json.dumps(db, indent=4).encode()).decode()
+            update_data = json.dumps({
+                "message": f"Activate key {key[:12]}...",
+                "content": new_content,
+                "sha": sha
+            }).encode()
 
-        start_response('200 OK', cors_headers)
-        return [json.dumps({"success": True, "message": "¡Activado correctamente! Bienvenido a YKZ Premium."}).encode()]
+            update_req = urllib.request.Request(api_url, data=update_data, headers=gh_headers, method='PUT')
+            with urllib.request.urlopen(update_req, timeout=10):
+                pass
 
-    except Exception as e:
-        start_response('500 Internal Server Error', cors_headers)
-        return [json.dumps({"error": f"Error del servidor: {str(e)}"}).encode()]
+            self._send_json(200, {"success": True, "message": "¡Activado correctamente! Bienvenido a YKZ Premium."})
+
+        except Exception as e:
+            self._send_json(500, {"error": f"Error del servidor: {str(e)}"})

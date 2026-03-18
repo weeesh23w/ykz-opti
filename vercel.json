@@ -1,12 +1,10 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/activate", "destination": "/api/activate.py" },
-    { "source": "/api/generate", "destination": "/api/generate.py" },
-    { "source": "/api/check", "destination": "/api/check.py" },
     { "source": "/", "destination": "/website/index.html" },
     { "source": "/success.html", "destination": "/website/success.html" },
     { "source": "/assets/(.*)", "destination": "/website/assets/$1" },
-    { "source": "/(.*).(css|js|png|jpg|jpeg|gif|svg|ico)", "destination": "/website/$1.$2" }
+    { "source": "/style.css", "destination": "/website/style.css" },
+    { "source": "/script.js", "destination": "/website/script.js" }
   ]
 }
