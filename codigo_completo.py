@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.1.2"
+CURRENT_VERSION = "3.1.3"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -377,20 +377,22 @@ class LoginWindow(ctk.CTkToplevel):
         except: pass
         l = LANG[self.lang_code]
 
-        self.configure(fg_color=COLOR_BG)
+        self.configure(fg_color="#000000") # Pure black for maximum contrast
         
         # Centering
+        self.update_idletasks()
+        w, h = 500, 500
         ws = self.winfo_screenwidth()
         hs = self.winfo_screenheight()
-        x = (ws/2) - (450/2)
-        y = (hs/2) - (450/2)
-        self.geometry('+%d+%d' % (x, y))
+        x = (ws/2) - (w/2)
+        y = (hs/2) - (h/2)
+        self.geometry(f'{w}x{h}+{int(x)}+{int(y)}')
         self.grab_set()
         self.attributes("-topmost", True)
         
-        # Main container with border
-        self.main_frame = ctk.CTkFrame(self, fg_color=COLOR_BG, border_color=COLOR_ACCENT, border_width=2, corner_radius=20)
-        self.main_frame.pack(fill="both", expand=True, padx=2, pady=2)
+        # Main container with NEON border
+        self.main_frame = ctk.CTkFrame(self, fg_color="#080008", border_color="#FF00FF", border_width=3, corner_radius=25)
+        self.main_frame.pack(fill="both", expand=True, padx=5, pady=5)
 
         # Close button
         self.btn_close = ctk.CTkButton(self.main_frame, text="✕", width=30, height=30, fg_color="transparent", 
@@ -406,14 +408,14 @@ class LoginWindow(ctk.CTkToplevel):
         
         ctk.CTkLabel(self.main_frame, text=l["login_desc"], font=("Arial", 14), text_color=COLOR_TEXT_SUB).pack(pady=5)
         
-        self.entry = ctk.CTkEntry(self.main_frame, width=340, placeholder_text=l["login_ph"], 
-                                 justify="center", height=50, font=("Consolas", 16), 
-                                 fg_color="#100010", border_color="#330033")
-        self.entry.pack(pady=20)
+        self.entry = ctk.CTkEntry(self.main_frame, width=380, placeholder_text=l["login_ph"], 
+                                 justify="center", height=60, font=("Consolas", 18, "bold"), 
+                                 fg_color="#000000", border_color="#FF00FF", text_color="#FF00FF")
+        self.entry.pack(pady=25)
         
-        self.btn_activate = ctk.CTkButton(self.main_frame, text=l["login_btn"].upper(), width=340, height=55, 
-                                        font=("Arial", 16, "bold"), fg_color=COLOR_ACCENT, 
-                                        hover_color=COLOR_ACCENT_HOVER, command=self.check_key)
+        self.btn_activate = ctk.CTkButton(self.main_frame, text=l["login_btn"].upper(), width=380, height=65, 
+                                         font=("Arial", 18, "bold"), fg_color="#FF00FF", 
+                                         hover_color="#CC00CC", text_color="white", command=self.check_key)
         self.btn_activate.pack(pady=10)
         
         self.lbl_msg = ctk.CTkLabel(self.main_frame, text="", font=("Arial", 12))
@@ -428,8 +430,8 @@ class LoginWindow(ctk.CTkToplevel):
         key = self.entry.get().strip().upper()
         if not key: return
         
-        self.btn_activate.configure(state="disabled", text="VALIDANDO...")
-        self.lbl_msg.configure(text="Conectando con el servidor seguro...", text_color="white")
+        self.btn_activate.configure(state="disabled", text="CONECTANDO...")
+        self.lbl_msg.configure(text="ESTABLECIENDO CONEXIÓN SEGURA...", text_color="white")
         self.update()
         
         def run_val():
@@ -2625,31 +2627,33 @@ if __name__ == "__main__":
         sys.exit(0)
         
 def create_start_menu_shortcut():
-    """Crea un acceso directo en el Menú Inicio para que sea buscable."""
+    """Crea un acceso directo en el Menú Inicio y Escritorio."""
     try:
         if not getattr(sys, 'frozen', False): return
         app_path = sys.executable
         shortcut_name = "YKZ Optimizer.lnk"
+        
+        # Paths
         programs_path = os.path.join(os.environ["APPDATA"], "Microsoft", "Windows", "Start Menu", "Programs")
-        shortcut_path = os.path.join(programs_path, shortcut_name)
+        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
         
-        if os.path.exists(shortcut_path): return
-        
-        # PowerShell script to create shortcut with icon
-        ps_script = f'$s=(New-Object -COM WScript.Shell).CreateShortcut("{shortcut_path}");$s.TargetPath="{app_path}";$s.WorkingDirectory="{os.path.dirname(app_path)}";$s.Save()'
-        subprocess.run(["powershell", "-Command", ps_script], capture_output=True, creationflags=0x08000000)
+        for folder in [programs_path, desktop_path]:
+            target = os.path.join(folder, shortcut_name)
+            if not os.path.exists(target):
+                ps_script = f'$s=(New-Object -COM WScript.Shell).CreateShortcut("{target}");$s.TargetPath="{app_path}";$s.WorkingDirectory="{os.path.dirname(app_path)}";$s.Save()'
+                subprocess.run(["powershell", "-Command", ps_script], capture_output=True, creationflags=0x08000000)
     except: pass
 
 def copy_to_desktop():
-    """Copia el ejecutable al escritorio si no está allí."""
+    """Copia físicamente el EXE al escritorio si no está allí."""
     try:
         if not getattr(sys, 'frozen', False): return
         app_path = sys.executable
         desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-        target_path = os.path.join(desktop_path, "YKZ Optimizer.exe")
+        target_path = os.path.join(desktop_path, "YKZ_Optimizer.exe")
         
         if os.path.abspath(app_path).lower() == os.path.abspath(target_path).lower():
-            return # Ya estamos en el escritorio
+            return
             
         if not os.path.exists(target_path):
             import shutil
@@ -2660,4 +2664,5 @@ if __name__ == "__main__":
     create_start_menu_shortcut()
     copy_to_desktop()
     app = PurpleApp()
+    app.title(f"YKZ OPTI {CURRENT_VERSION} [PREMIUM]")
     app.mainloop()
