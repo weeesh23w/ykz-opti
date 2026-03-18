@@ -13,7 +13,6 @@ fix_images.py
 patch_code.py
 licencias_generadas.txt
 version.json
-requirements.txt
 README.md
 .github/
 .agents/

@@ -1,2 +1,1 @@
-# Vercel Python Dependencies
-# No dependencies needed for urllib
+# Vercel Python Runtime - Required for serverless functions
