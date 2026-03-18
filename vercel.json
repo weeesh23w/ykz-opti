@@ -1,0 +1,15 @@
+{
+  "functions": {
+    "website/api/*.py": {
+      "runtime": "@vercel/python"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/check",    "destination": "/website/api/check.py" },
+    { "source": "/api/activate", "destination": "/website/api/activate.py" },
+    { "source": "/api/generate", "destination": "/website/api/generate.py" },
+    { "source": "/success",      "destination": "/website/success.html" },
+    { "source": "/",             "destination": "/website/index.html" },
+    { "source": "/(.*)",         "destination": "/website/$1" }
+  ]
+}
