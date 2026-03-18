@@ -1,8 +1,5 @@
 {
   "cleanUrls": true,
-  "functions": {
-    "api/*.py": { "runtime": "@vercel/python" }
-  },
   "rewrites": [
     { "source": "/api/check",    "destination": "api/check.py" },
     { "source": "/api/activate", "destination": "api/activate.py" },
