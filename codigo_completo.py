@@ -296,10 +296,7 @@ LANG = {
 # --- License Management ---
 class LicenseManager:
     LICENSE_FILE = os.path.join(os.getenv('APPDATA'), "ykz_license.json")
-    API_URLS = [
-        "https://ykz-opti.vercel.app/api/activate",
-        "https://ykz-opti.vercel.app/api/activate.py"
-    ]
+    API_URL = "https://ykz-opti.vercel.app/api/activate"
 
     _cached_hwid = None
     @staticmethod
@@ -307,12 +304,11 @@ class LicenseManager:
         if LicenseManager._cached_hwid: return LicenseManager._cached_hwid
         try:
             import platform, hashlib, uuid
-            # Rápido y sin WMI para evitar cuelgues
             raw = f"{platform.node()}-{platform.processor()}-{uuid.getnode()}"
             LicenseManager._cached_hwid = hashlib.sha256(raw.encode()).hexdigest()[:16].upper()
             return LicenseManager._cached_hwid
         except:
-            return "UNKNOWN-HWID-FIX"
+            return "UNKNOWN-HWID"
 
     @staticmethod
     def get_public_ip():
@@ -324,39 +320,33 @@ class LicenseManager:
 
     @staticmethod
     def validate(key):
-        """Validación online contra Vercel (Intenta múltiples rutas)"""
+        """Validación online contra Vercel API"""
         hwid = LicenseManager.get_hwid()
         ip = LicenseManager.get_public_ip()
         
         import urllib.request, json
         data = json.dumps({"key": key, "hwid": hwid, "ip": ip}).encode('utf-8')
         
-        last_err = "No hay conexión"
-        for url in LicenseManager.API_URLS:
-            try:
-                req = urllib.request.Request(url, data=data)
-                req.add_header('Content-Type', 'application/json')
-                with urllib.request.urlopen(req, timeout=10) as response:
-                    res = json.loads(response.read().decode())
-                    if res.get("success"):
-                        return True, res.get("message", "OK")
-                    else:
-                        return False, res.get("error", "Error de licencia")
-            except Exception as e:
-                last_err = f"Fallo en servidor: {str(e)[:40]}"
-                continue
-                
-        # [EMERGENCY FALLBACK]
-        if key in ["YKZ-ELITE-2026", "YKZ-MASTER-FIX-2026"]:
-            return True, "ACCESO ELITE (Master Key Fallback)"
-            
-        return False, last_err
+        try:
+            req = urllib.request.Request(LicenseManager.API_URL, data=data)
+            req.add_header('Content-Type', 'application/json')
+            with urllib.request.urlopen(req, timeout=12) as response:
+                res = json.loads(response.read().decode())
+                if res.get("success"):
+                    return True, res.get("message", "Activado con éxito")
+                else:
+                    return False, res.get("error", "Llave inválida")
+        except Exception as e:
+            # Fallback de emergencia si el servidor cae (solo para llaves maestras conocidas)
+            if key in ["YKZ-ELITE-2026", "YKZ-MASTER-FIX-2026"]:
+                return True, "ACCESO DE EMERGENCIA (Offline)"
+            return False, f"Servidor no disponible: {str(e)[:30]}"
 
     @staticmethod
     def save(key):
         try:
             with open(LicenseManager.LICENSE_FILE, "w") as f:
-                json.dump({"key": key, "hwid": LicenseManager.get_hwid(), "activated": True}, f)
+                json.dump({"key": key, "hwid": LicenseManager.get_hwid(), "activated": True, "date": time.strftime("%Y-%m-%d")}, f)
         except: pass
 
     @staticmethod
@@ -365,7 +355,6 @@ class LicenseManager:
             try:
                 with open(LicenseManager.LICENSE_FILE, "r") as f:
                     data = json.load(f)
-                    # Verificar que la licencia sea para ESTE equipo
                     if data.get("hwid") == LicenseManager.get_hwid():
                         return data.get("key")
             except: pass
@@ -1600,67 +1589,7 @@ class InfoCard(ctk.CTkFrame):
         v = ctk.CTkLabel(row, text=str(value), font=("Roboto", 13), text_color=COLOR_TEXT_MAIN, anchor="e", wraplength=230, justify="right")
         v.pack(side="right", fill="x")
 
-class LicenseManager:
-    SALT = "YKZ_OPTI_SECRET_SALT_2026"
-    LICENSE_FILE = "license.key"
-    NTFY_URL = "https://ntfy.sh/ykz_activations_SECRET_2026"
-
-    @staticmethod
-    def validate(key):
-        return True
-
-    @staticmethod
-    def check_expiration_status(key, tag):
-        data = LicenseManager.load_data()
-        if not data: return True
-        if data.get("key") != key: return True
-        start_ts = data.get("start_ts", 0)
-        if start_ts == 0: return True
-        
-        now = time.time()
-        diff = now - start_ts
-        ONE_WEEK = 7 * 24 * 3600
-        ONE_MONTH = 30 * 24 * 3600
-        
-        if tag == "1WK_" and diff > ONE_WEEK: return False
-        if tag == "1MO_" and diff > ONE_MONTH: return False
-        return True
-
-    @staticmethod
-    def save(key):
-        try:
-            data = {
-                "key": key,
-                "start_ts": time.time(),
-                "start_date": time.strftime("%Y-%m-%d %H:%M:%S")
-            }
-            with open(os.path.join(get_app_path(), LicenseManager.LICENSE_FILE), "w") as f:
-                json.dump(data, f)
-            threading.Thread(target=LicenseManager.report_activation, args=(key, data), daemon=True).start()
-        except Exception as e:
-            logging.error(f"License save failed: {e}")
-
-    @staticmethod
-    def load():
-        return "YKZ-FREE-PASS-DUMMY"
-
-    @staticmethod
-    def load_data():
-        try:
-            path = os.path.join(get_app_path(), LicenseManager.LICENSE_FILE)
-            if os.path.exists(path):
-                with open(path, "r") as f:
-                    return json.load(f)
-        except: pass
-        return None
-
-    @staticmethod
-    def report_activation(key, data):
-        try:
-            # Skip actual ntfy for safety/privacy in this environment
-            pass
-        except Exception as e:
-            logging.error(f"Report failed: {e}")
+# Duplicate LicenseManager class removed from here to avoid conflicts. Logic consolidated above.
 
 
 
@@ -2434,6 +2363,7 @@ class PurpleApp(ctk.CTk):
 
     def _fetch_wmi(self):
         try:
+            import pythoncom
             pythoncom.CoInitialize()
             c = wmi.WMI()
             
@@ -2513,6 +2443,11 @@ class PurpleApp(ctk.CTk):
                 
         except Exception as e:
             logging.error(f"WMI Error: {e}")
+        finally:
+            try:
+                import pythoncom
+                pythoncom.CoUninitialize()
+            except: pass
 
     def update_card(self, key, data):
         self.after(0, lambda: self._ui_update_card(key, data))
