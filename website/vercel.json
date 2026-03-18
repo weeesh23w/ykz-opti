@@ -4,10 +4,10 @@
     "api/*.py": { "runtime": "@vercel/python" }
   },
   "rewrites": [
-    { "source": "/api/check",    "destination": "/api/check.py" },
-    { "source": "/api/activate", "destination": "/api/activate.py" },
-    { "source": "/api/generate", "destination": "/api/generate.py" },
-    { "source": "/success",      "destination": "/success.html" },
-    { "source": "/",             "destination": "/index.html" }
+    { "source": "/api/check",    "destination": "api/check.py" },
+    { "source": "/api/activate", "destination": "api/activate.py" },
+    { "source": "/api/generate", "destination": "api/generate.py" },
+    { "source": "/success",      "destination": "success.html" },
+    { "source": "/",             "destination": "index.html" }
   ]
 }
