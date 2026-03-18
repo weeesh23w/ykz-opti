@@ -1,10 +1,18 @@
 {
+  "functions": {
+    "api/*.py": {
+      "runtime": "@vercel/python"
+    }
+  },
   "rewrites": [
-    { "source": "/success.html", "destination": "/website/success.html" },
+    { "source": "/api/check",    "destination": "/api/check.py" },
+    { "source": "/api/activate", "destination": "/api/activate.py" },
+    { "source": "/api/generate", "destination": "/api/generate.py" },
     { "source": "/success",      "destination": "/website/success.html" },
-    { "source": "/assets/(.*)", "destination": "/website/assets/$1" },
-    { "source": "/style.css",   "destination": "/website/style.css" },
-    { "source": "/script.js",   "destination": "/website/script.js" },
-    { "source": "/",            "destination": "/website/index.html" }
+    { "source": "/success.html", "destination": "/website/success.html" },
+    { "source": "/assets/(.*)",  "destination": "/website/assets/$1" },
+    { "source": "/style.css",    "destination": "/website/style.css" },
+    { "source": "/script.js",    "destination": "/website/script.js" },
+    { "source": "/",             "destination": "/website/index.html" }
   ]
 }
