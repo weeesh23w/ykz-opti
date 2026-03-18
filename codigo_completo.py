@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.1.3"
+CURRENT_VERSION = "3.1.4"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -296,7 +296,7 @@ LANG = {
 # --- License Management ---
 class LicenseManager:
     LICENSE_FILE = os.path.join(os.getenv('APPDATA'), "ykz_license.json")
-    API_URL = "https://ykz-opti.vercel.app/api/activate" # URL de tu backend en Vercel
+    API_URL = "https://ykz-opti.vercel.app/api/activate"
 
     @staticmethod
     def get_hwid():
@@ -1656,65 +1656,6 @@ class LicenseManager:
         except Exception as e:
             logging.error(f"Report failed: {e}")
 
-class LoginWindow(ctk.CTkToplevel):
-    def __init__(self, parent, on_success):
-        super().__init__(parent)
-        self.on_success = on_success
-        self.geometry("400x320")
-        
-        # Determine language for login window
-        self.lang_code = "ES"
-        try:
-            if hasattr(parent, "current_lang"):
-                self.lang_code = parent.current_lang
-        except: pass
-        l = LANG[self.lang_code]
-
-        self.title(l["login_title"])
-        self.configure(fg_color=COLOR_BG)
-        
-        ws = self.winfo_screenwidth()
-        hs = self.winfo_screenheight()
-        x = (ws/2) - (400/2)
-        y = (hs/2) - (320/2)
-        self.geometry('+%d+%d' % (x, y))
-        self.grab_set()
-        self.attributes("-topmost", True)
-        
-        ctk.CTkLabel(self, text="YKZ OPTI", font=("Arial", 24, "bold"), text_color=COLOR_ACCENT).pack(pady=(40, 10))
-        ctk.CTkLabel(self, text=l["login_desc"], text_color="white").pack(pady=5)
-        
-        self.entry = ctk.CTkEntry(self, width=280, placeholder_text=l["login_ph"], justify="center", height=40)
-        self.entry.pack(pady=15)
-        
-        ctk.CTkButton(self, text=l["login_btn"], width=280, height=45, font=("Arial", 14, "bold"), fg_color=COLOR_ACCENT, hover_color=COLOR_ACCENT_HOVER, command=self.check_key).pack(pady=10)
-        
-        self.lbl_msg = ctk.CTkLabel(self, text="", text_color="red")
-        self.lbl_msg.pack(pady=10)
-        
-        self.protocol("WM_DELETE_WINDOW", self.on_close)
-
-    def check_key(self):
-        l = LANG[self.lang_code]
-        key = self.entry.get().strip().upper()
-        if not key: return
-        self.lbl_msg.configure(text="Validando...", text_color="white")
-        self.update()
-        success, msg = LicenseManager.validate(key)
-        if success:
-            LicenseManager.save(key)
-            self.lbl_msg.configure(text=l["login_success"], text_color="green")
-            messagebox.showinfo("YKZ OPTI", f"¡Activado!\n{msg}")
-            self.after(500, self.finish)
-        else:
-            self.lbl_msg.configure(text=msg, text_color="red")
-
-    def finish(self):
-        self.destroy()
-        self.on_success()
-
-    def on_close(self):
-        sys.exit(0)
 
 
 
