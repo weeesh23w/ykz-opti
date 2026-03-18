@@ -1,14 +1,11 @@
 {
-  "functions": {
-    "api/*.py": {
-      "runtime": "vercel-python@0.1.0"
-    }
-  },
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1.py" },
-    { "src": "/", "dest": "/website/index.html" },
-    { "src": "/success.html", "dest": "/website/success.html" },
-    { "src": "/assets/(.*)", "dest": "/website/assets/$1" },
-    { "src": "/(.*).(css|js|png|jpg|jpeg|gif|svg|ico)", "dest": "/website/$1.$2" }
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/activate", "destination": "/api/activate.py" },
+    { "source": "/api/check", "destination": "/api/check.py" },
+    { "source": "/", "destination": "/website/index.html" },
+    { "source": "/success.html", "destination": "/website/success.html" },
+    { "source": "/assets/(.*)", "destination": "/website/assets/$1" },
+    { "source": "/(.*).(css|js|png|jpg|jpeg|gif|svg|ico)", "destination": "/website/$1.$2" }
   ]
 }

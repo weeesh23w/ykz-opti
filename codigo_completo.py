@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.1.6"
+CURRENT_VERSION = "3.1.7"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -296,7 +296,10 @@ LANG = {
 # --- License Management ---
 class LicenseManager:
     LICENSE_FILE = os.path.join(os.getenv('APPDATA'), "ykz_license.json")
-    API_URL = "https://ykz-opti.vercel.app/api/activate"
+    API_URLS = [
+        "https://ykz-opti.vercel.app/api/activate",
+        "https://ykz-opti.vercel.app/api/activate.py"
+    ]
 
     _cached_hwid = None
     @staticmethod
@@ -321,30 +324,33 @@ class LicenseManager:
 
     @staticmethod
     def validate(key):
-        """Validación online contra Vercel"""
-        # [EMERGENCY MASTER KEY]
-        if key in ["YKZ-ELITE-2026", "YKZ-MASTER-FIX-2026"]:
-            return True, "ACCESO ELITE CONCEDIDO (Master Key)"
-            
+        """Validación online contra Vercel (Intenta múltiples rutas)"""
         hwid = LicenseManager.get_hwid()
         ip = LicenseManager.get_public_ip()
         
-        try:
-            import urllib.request
-            import json
-            data = json.dumps({"key": key, "hwid": hwid, "ip": ip}).encode('utf-8')
-            req = urllib.request.Request(LicenseManager.API_URL, data=data)
-            req.add_header('Content-Type', 'application/json')
-            with urllib.request.urlopen(req, timeout=10) as response:
-                res = json.loads(response.read().decode())
-                if res.get("success"):
-                    return True, res.get("message", "OK")
-                else:
-                    return False, res.get("error", "Error desconocido")
-        except Exception as e:
-            # Fallback total para emergencias
-            if key in ["YKZ-ELITE-2026", "YKZ-MASTER-FIX-2026"]: return True, "MODO SEGURO / MASTER KEY"
-            return False, f"Servidor: {str(e)[:30]}"
+        import urllib.request, json
+        data = json.dumps({"key": key, "hwid": hwid, "ip": ip}).encode('utf-8')
+        
+        last_err = "No hay conexión"
+        for url in LicenseManager.API_URLS:
+            try:
+                req = urllib.request.Request(url, data=data)
+                req.add_header('Content-Type', 'application/json')
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    res = json.loads(response.read().decode())
+                    if res.get("success"):
+                        return True, res.get("message", "OK")
+                    else:
+                        return False, res.get("error", "Error de licencia")
+            except Exception as e:
+                last_err = f"Fallo en servidor: {str(e)[:40]}"
+                continue
+                
+        # [EMERGENCY FALLBACK]
+        if key in ["YKZ-ELITE-2026", "YKZ-MASTER-FIX-2026"]:
+            return True, "ACCESO ELITE (Master Key Fallback)"
+            
+        return False, last_err
 
     @staticmethod
     def save(key):
