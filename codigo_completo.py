@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.1.4"
+CURRENT_VERSION = "3.1.5"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -381,7 +381,7 @@ class LoginWindow(ctk.CTkToplevel):
         
         # Centering
         self.update_idletasks()
-        w, h = 500, 500
+        w, h = 420, 380
         ws = self.winfo_screenwidth()
         hs = self.winfo_screenheight()
         x = (ws/2) - (w/2)
@@ -397,14 +397,10 @@ class LoginWindow(ctk.CTkToplevel):
         # Close button
         self.btn_close = ctk.CTkButton(self.main_frame, text="✕", width=30, height=30, fg_color="transparent", 
                                       hover_color="#330033", text_color="white", command=lambda: sys.exit(0))
-        self.btn_close.place(x=405, y=10)
+        self.btn_close.place(x=375, y=10)
         
-        # Logo
-        try:
-            self.logo = GlitchLogo(self.main_frame)
-            self.logo.pack(pady=(40, 10))
-        except:
-             ctk.CTkLabel(self.main_frame, text="YKZ OPTI", font=("Arial", 32, "bold"), text_color=COLOR_ACCENT).pack(pady=(40, 10))
+        # Title Label (Instead of logo)
+        ctk.CTkLabel(self.main_frame, text="YKZ PREMIUM", font=("Arial", 28, "bold"), text_color="#FF00FF").pack(pady=(40, 10))
         
         ctk.CTkLabel(self.main_frame, text=l["login_desc"], font=("Arial", 14), text_color=COLOR_TEXT_SUB).pack(pady=5)
         
@@ -416,7 +412,7 @@ class LoginWindow(ctk.CTkToplevel):
         self.btn_activate = ctk.CTkButton(self.main_frame, text=l["login_btn"].upper(), width=380, height=65, 
                                          font=("Arial", 18, "bold"), fg_color="#FF00FF", 
                                          hover_color="#CC00CC", text_color="white", command=self.check_key)
-        self.btn_activate.pack(pady=10)
+        self.btn_activate.pack(pady=5)
         
         self.lbl_msg = ctk.CTkLabel(self.main_frame, text="", font=("Arial", 12))
         self.lbl_msg.pack(pady=10)
