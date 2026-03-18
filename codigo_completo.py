@@ -317,7 +317,7 @@ class LicenseManager:
     def get_public_ip():
         try:
             import urllib.request
-            return urllib.request.urlopen('https://api.ipify.org').read().decode('utf8')
+            return urllib.request.urlopen('https://api.ipify.org', timeout=5).read().decode('utf8')
         except:
             return "0.0.0.0"
 
