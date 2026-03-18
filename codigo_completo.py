@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.9.6"
+CURRENT_VERSION = "2.9.7"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -165,6 +165,8 @@ LANG = {
         "login_ph": "YKZ-XXXX-XXXX-XXXX",
         "login_success": "¡Activado!",
         "login_fail": "Clave inválida.",
+        "btn_buy_sidebar": "ACTIVATE NOW",
+        "tt_license": "Introducir Clave de Licencia",
         "drv_col_dev": "DISPOSITIVO",
         "drv_col_man": "FABRICANTE",
         "drv_col_ver": "VER. INSTALADA",
@@ -281,6 +283,8 @@ LANG = {
         "login_ph": "YKZ-XXXX-XXXX-XXXX",
         "login_success": "Activated!",
         "login_fail": "Invalid key.",
+        "btn_buy_sidebar": "ACTIVATE NOW",
+        "tt_license": "Enter License Key",
         "drv_col_dev": "DEVICE",
         "drv_col_man": "MANUFACTURER",
         "drv_col_ver": "INSTALLED VER.",
@@ -1216,43 +1220,9 @@ class RepairView(BaseCommandView):
 
 class ActivacionView(BaseCommandView):
     def __init__(self, master):
-        self.master_app = master.master
-        l = LANG.get(getattr(self.master_app, 'current_lang', 'ES'), LANG["ES"])
+        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
         super().__init__(master, l["act_title"])
-        self.refresh_view()
-
-    def refresh_view(self):
-        # Clear existing cards if any
-        for widget in self.grid_frame.winfo_children():
-            widget.destroy()
-            
-        l = LANG.get(getattr(self.master_app, 'current_lang', 'ES'), LANG["ES"])
-        
-        # Card 1: Windows Activation
         self.create_card(0, 0, "🔑", l["act_c1_t"], l["act_c1_d"], self.activate_windows, color=COLOR_SUCCESS)
-        
-        # Card 2: App License Status
-        saved_key = LicenseManager.load()
-        if saved_key:
-            status = f"ACTIVADA ({saved_key})"
-            btn_text = "CAMBIAR CLAVE / CERRAR SESIÓN"
-            color = COLOR_ACCENT
-        else:
-            status = "NO ACTIVADA"
-            btn_text = "INGRESAR CLAVE"
-            color = COLOR_DANGER
-            
-        desc = f"Estado: {status}\nVersión: {CURRENT_VERSION}\nCopyright © 2026 YKZ Team"
-        self.create_card(0, 1, "💎", "LICENCIA YKZ OPTI", desc, self.manage_license, color=color, btn_text=btn_text)
-
-    def manage_license(self):
-        # Delete license and restart to force login
-        if os.path.exists(LicenseManager.LICENSE_FILE):
-            try: os.remove(LicenseManager.LICENSE_FILE)
-            except: pass
-        
-        messagebox.showinfo("Licencia", "Se ha cerrado la sesión. Reinicia el programa para ingresar una nueva clave.")
-        os._exit(0)
 
     def activate_windows(self):
         def _run_admin():
@@ -2076,7 +2046,6 @@ class PurpleApp(ctk.CTk):
 
         
         self.btn_home = self.create_nav_btn(LANG[self.current_lang]["nav_home"], self.show_home)
-        self.btn_activa = self.create_nav_btn(LANG[self.current_lang]["nav_activa"], self.show_activa)
         self.btn_opti = self.create_nav_btn(LANG[self.current_lang]["nav_opti"], self.show_opti)
         self.btn_gaming = self.create_nav_btn(LANG[self.current_lang]["nav_gaming"], self.show_gaming)
         self.btn_input = self.create_nav_btn(LANG[self.current_lang]["nav_input"], self.show_input)
@@ -2093,6 +2062,7 @@ class PurpleApp(ctk.CTk):
         self.btn_drivers = self.create_nav_btn(LANG[self.current_lang]["nav_drivers"], self.show_drivers)
         self.btn_repair = self.create_nav_btn(LANG[self.current_lang]["nav_repair"], self.show_repair)
         self.btn_power = self.create_nav_btn(LANG[self.current_lang]["nav_power"], self.show_power)
+        self.btn_activa = self.create_nav_btn(LANG[self.current_lang]["nav_activa"], self.show_activa)
         
         ctk.CTkFrame(self.sidebar, height=1, fg_color="#330033").pack(fill="x", padx=20, pady=10)
         
@@ -2105,6 +2075,20 @@ class PurpleApp(ctk.CTk):
         self.btn_update.pack(side="bottom", pady=(0, 10), padx=20)
         
         ctk.CTkLabel(self.sidebar, text=f"v{CURRENT_VERSION}", font=("Arial", 10), text_color="#555").pack(side="bottom", pady=(0, 10))
+
+        # Bottom Frame for License Key + Activate Now (Driver Booster style)
+        self.bottom_sidebar_frame = ctk.CTkFrame(self.sidebar, fg_color="transparent")
+        self.bottom_sidebar_frame.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
+
+        self.btn_license_key = ctk.CTkButton(self.bottom_sidebar_frame, text="🔑", width=40, height=32, corner_radius=6, 
+                                            fg_color="#1a1a1a", hover_color="#333", font=("Arial", 14),
+                                            command=lambda: LoginWindow(self, lambda: messagebox.showinfo("YKZ OPTI", "Licencia actualizada con éxito.")))
+        self.btn_license_key.pack(side="left", padx=(0, 5))
+
+        self.btn_buy_sidebar = ctk.CTkButton(self.bottom_sidebar_frame, text=LANG[self.current_lang]["btn_buy_sidebar"], height=32, corner_radius=6, 
+                                            fg_color="#cc9900", hover_color="#e6ac00", text_color="black", font=("Roboto", 11, "bold"),
+                                            command=lambda: ctypes.windll.shell32.ShellExecuteW(None, "open", "https://buy.stripe.com/aFa4gr27pfvi3sKdn69IQ00", None, None, 1))
+        self.btn_buy_sidebar.pack(side="left", fill="x", expand=True)
 
         self.main_area = ctk.CTkFrame(self, fg_color=COLOR_BG) # Changed to COLOR_BG to avoid black gaps
         self.main_area.pack(side="right", fill="both", expand=True, padx=20, pady=20)
