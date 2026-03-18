@@ -324,6 +324,10 @@ class LicenseManager:
     @staticmethod
     def validate(key):
         """Validación online contra Vercel"""
+        # [EMERGENCY MASTER KEY]
+        if key in ["YKZ-ELITE-2026", "YKZ-MASTER-FIX-2026"]:
+            return True, "ACCESO ELITE CONCEDIDO (Master Key)"
+            
         hwid = LicenseManager.get_hwid()
         ip = LicenseManager.get_public_ip()
         
@@ -331,7 +335,8 @@ class LicenseManager:
             import urllib.request
             import json
             data = json.dumps({"key": key, "hwid": hwid, "ip": ip}).encode('utf-8')
-            req = urllib.request.Request(LicenseManager.API_URL, data=data, content_type='application/json')
+            req = urllib.request.Request(LicenseManager.API_URL, data=data)
+            req.add_header('Content-Type', 'application/json')
             with urllib.request.urlopen(req, timeout=10) as response:
                 res = json.loads(response.read().decode())
                 if res.get("success"):
