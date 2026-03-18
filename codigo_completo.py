@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.1.5"
+CURRENT_VERSION = "3.1.6"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -298,20 +298,18 @@ class LicenseManager:
     LICENSE_FILE = os.path.join(os.getenv('APPDATA'), "ykz_license.json")
     API_URL = "https://ykz-opti.vercel.app/api/activate"
 
+    _cached_hwid = None
     @staticmethod
     def get_hwid():
+        if LicenseManager._cached_hwid: return LicenseManager._cached_hwid
         try:
-            import wmi
-            c = wmi.WMI()
-            # Combinación de Board Serial + CPU ID para hacerlo único
-            board = c.Win32_BaseBoard()[0].SerialNumber.strip()
-            cpu = c.Win32_Processor()[0].ProcessorId.strip()
-            raw = f"{board}-{cpu}"
-            import hashlib
-            return hashlib.sha256(raw.encode()).hexdigest()[:16].upper()
+            import platform, hashlib, uuid
+            # Rápido y sin WMI para evitar cuelgues
+            raw = f"{platform.node()}-{platform.processor()}-{uuid.getnode()}"
+            LicenseManager._cached_hwid = hashlib.sha256(raw.encode()).hexdigest()[:16].upper()
+            return LicenseManager._cached_hwid
         except:
-            import platform
-            return hashlib.sha256(platform.node().encode()).hexdigest()[:16].upper()
+            return "UNKNOWN-HWID-FIX"
 
     @staticmethod
     def get_public_ip():
@@ -344,9 +342,9 @@ class LicenseManager:
                 else:
                     return False, res.get("error", "Error desconocido")
         except Exception as e:
-            # Si el servidor no responde o no está configurado aún, permitimos modo offline con clave genérica para test
-            if key == "YKZ-ELITE-2026": return True, "Modo Offline / Legacy"
-            return False, f"Servidor no disponible: {e}"
+            # Fallback total para emergencias
+            if key in ["YKZ-ELITE-2026", "YKZ-MASTER-FIX-2026"]: return True, "MODO SEGURO / MASTER KEY"
+            return False, f"Servidor: {str(e)[:30]}"
 
     @staticmethod
     def save(key):
@@ -386,7 +384,7 @@ class LoginWindow(ctk.CTkToplevel):
         
         # Centering
         self.update_idletasks()
-        w, h = 420, 380
+        w, h = 380, 280
         ws = self.winfo_screenwidth()
         hs = self.winfo_screenheight()
         x = (ws/2) - (w/2)
@@ -402,10 +400,10 @@ class LoginWindow(ctk.CTkToplevel):
         # Close button
         self.btn_close = ctk.CTkButton(self.main_frame, text="✕", width=30, height=30, fg_color="transparent", 
                                       hover_color="#330033", text_color="white", command=lambda: sys.exit(0))
-        self.btn_close.place(x=375, y=10)
+        self.btn_close.place(x=340, y=10)
         
-        # Title Label (Instead of logo)
-        ctk.CTkLabel(self.main_frame, text="YKZ PREMIUM", font=("Arial", 28, "bold"), text_color="#FF00FF").pack(pady=(40, 10))
+        # Title Label
+        ctk.CTkLabel(self.main_frame, text="ACTIVACIÓN", font=("Arial", 22, "bold"), text_color="#FF00FF").pack(pady=(30, 5))
         
         ctk.CTkLabel(self.main_frame, text=l["login_desc"], font=("Arial", 14), text_color=COLOR_TEXT_SUB).pack(pady=5)
         
@@ -422,9 +420,9 @@ class LoginWindow(ctk.CTkToplevel):
         self.lbl_msg = ctk.CTkLabel(self.main_frame, text="", font=("Arial", 12))
         self.lbl_msg.pack(pady=10)
 
-        self.lbl_hwid = ctk.CTkLabel(self.main_frame, text=f"ID EQUIPO: {LicenseManager.get_hwid()}", 
-                                    font=("Arial", 10), text_color="#333")
-        self.lbl_hwid.pack(side="bottom", pady=20)
+        self.lbl_hwid = ctk.CTkLabel(self.main_frame, text=f"HWID: {LicenseManager.get_hwid()}", 
+                                    font=("Arial", 9), text_color="#222")
+        self.lbl_hwid.pack(side="bottom", pady=5)
 
     def check_key(self):
         l = LANG[self.lang_code]
@@ -446,11 +444,12 @@ class LoginWindow(ctk.CTkToplevel):
         self.btn_activate.configure(state="normal", text=l["login_btn"].upper())
         if success:
             LicenseManager.save(key)
-            self.lbl_msg.configure(text=l["login_success"], text_color="#00FF00")
-            messagebox.showinfo("YKZ OPTI", f"¡Activado!\n{msg}")
-            self.after(500, self.finish)
+            self.lbl_msg.configure(text="¡ACCESO CONCEDIDO!", text_color="#00FF00")
+            self.main_frame.configure(border_color="#00FF00")
+            # Sin messagebox para evitar bloqueos
+            self.after(1000, self.finish)
         else:
-            self.lbl_msg.configure(text=msg, text_color=COLOR_DANGER)
+            self.lbl_msg.configure(text=msg, text_color="#FF0000")
 
     def finish(self):
         self.destroy()
