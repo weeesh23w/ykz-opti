@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.9.5"
+CURRENT_VERSION = "2.9.6"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -1216,9 +1216,43 @@ class RepairView(BaseCommandView):
 
 class ActivacionView(BaseCommandView):
     def __init__(self, master):
-        l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
+        self.master_app = master.master
+        l = LANG.get(getattr(self.master_app, 'current_lang', 'ES'), LANG["ES"])
         super().__init__(master, l["act_title"])
+        self.refresh_view()
+
+    def refresh_view(self):
+        # Clear existing cards if any
+        for widget in self.grid_frame.winfo_children():
+            widget.destroy()
+            
+        l = LANG.get(getattr(self.master_app, 'current_lang', 'ES'), LANG["ES"])
+        
+        # Card 1: Windows Activation
         self.create_card(0, 0, "🔑", l["act_c1_t"], l["act_c1_d"], self.activate_windows, color=COLOR_SUCCESS)
+        
+        # Card 2: App License Status
+        saved_key = LicenseManager.load()
+        if saved_key:
+            status = f"ACTIVADA ({saved_key})"
+            btn_text = "CAMBIAR CLAVE / CERRAR SESIÓN"
+            color = COLOR_ACCENT
+        else:
+            status = "NO ACTIVADA"
+            btn_text = "INGRESAR CLAVE"
+            color = COLOR_DANGER
+            
+        desc = f"Estado: {status}\nVersión: {CURRENT_VERSION}\nCopyright © 2026 YKZ Team"
+        self.create_card(0, 1, "💎", "LICENCIA YKZ OPTI", desc, self.manage_license, color=color, btn_text=btn_text)
+
+    def manage_license(self):
+        # Delete license and restart to force login
+        if os.path.exists(LicenseManager.LICENSE_FILE):
+            try: os.remove(LicenseManager.LICENSE_FILE)
+            except: pass
+        
+        messagebox.showinfo("Licencia", "Se ha cerrado la sesión. Reinicia el programa para ingresar una nueva clave.")
+        os._exit(0)
 
     def activate_windows(self):
         def _run_admin():
@@ -1837,7 +1871,8 @@ class PurpleApp(ctk.CTk):
         self.set_icon()
         self.check_security()
         self.withdraw()
-        self.after(100, self.check_license_flow)
+        # Small delay to ensure the OS/Window Manager is ready for a TopLevel
+        self.after(200, self.check_license_flow)
 
     def check_security(self):
         """Basic Anti-Debug and Integrity Check"""
@@ -1857,6 +1892,8 @@ class PurpleApp(ctk.CTk):
             self.start_intro()
         else:
             self.login = LoginWindow(self, self.start_intro)
+            self.login.deiconify()
+            self.login.focus_force()
 
     def start_intro(self):
         # Start pre-fetching hardware data early
