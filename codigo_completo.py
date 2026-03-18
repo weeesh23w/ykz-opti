@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "2.9.7"
+CURRENT_VERSION = "3.0.0"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -296,21 +296,59 @@ LANG = {
 # --- License Management ---
 class LicenseManager:
     LICENSE_FILE = os.path.join(os.getenv('APPDATA'), "ykz_license.json")
-    # For now, we use a simple hardcoded key or a hash. 
-    # To be more secure, this should check an online API.
-    VALID_KEYS = ["YKZ-ELITE-2026", "YKZ-PRO-LAUNCH", "TEST-KEY-123"]
+    API_URL = "https://ykz-opti.vercel.app/api/activate" # URL de tu backend en Vercel
+
+    @staticmethod
+    def get_hwid():
+        try:
+            import wmi
+            c = wmi.WMI()
+            # Combinación de Board Serial + CPU ID para hacerlo único
+            board = c.Win32_BaseBoard()[0].SerialNumber.strip()
+            cpu = c.Win32_Processor()[0].ProcessorId.strip()
+            raw = f"{board}-{cpu}"
+            import hashlib
+            return hashlib.sha256(raw.encode()).hexdigest()[:16].upper()
+        except:
+            import platform
+            return hashlib.sha256(platform.node().encode()).hexdigest()[:16].upper()
+
+    @staticmethod
+    def get_public_ip():
+        try:
+            import urllib.request
+            return urllib.request.urlopen('https://api.ipify.org').read().decode('utf8')
+        except:
+            return "0.0.0.0"
 
     @staticmethod
     def validate(key):
-        return key in LicenseManager.VALID_KEYS
+        """Validación online contra Vercel"""
+        hwid = LicenseManager.get_hwid()
+        ip = LicenseManager.get_public_ip()
+        
+        try:
+            import urllib.request
+            import json
+            data = json.dumps({"key": key, "hwid": hwid, "ip": ip}).encode('utf-8')
+            req = urllib.request.Request(LicenseManager.API_URL, data=data, content_type='application/json')
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res = json.loads(response.read().decode())
+                if res.get("success"):
+                    return True, res.get("message", "OK")
+                else:
+                    return False, res.get("error", "Error desconocido")
+        except Exception as e:
+            # Si el servidor no responde o no está configurado aún, permitimos modo offline con clave genérica para test
+            if key == "YKZ-ELITE-2026": return True, "Modo Offline / Legacy"
+            return False, f"Servidor no disponible: {e}"
 
     @staticmethod
     def save(key):
         try:
             with open(LicenseManager.LICENSE_FILE, "w") as f:
-                json.dump({"key": key, "activated": True}, f)
-        except:
-            pass
+                json.dump({"key": key, "hwid": LicenseManager.get_hwid(), "activated": True}, f)
+        except: pass
 
     @staticmethod
     def load():
@@ -318,9 +356,10 @@ class LicenseManager:
             try:
                 with open(LicenseManager.LICENSE_FILE, "r") as f:
                     data = json.load(f)
-                    return data.get("key")
-            except:
-                return None
+                    # Verificar que la licencia sea para ESTE equipo
+                    if data.get("hwid") == LicenseManager.get_hwid():
+                        return data.get("key")
+            except: pass
         return None
 
 class LoginWindow(ctk.CTkToplevel):
@@ -359,18 +398,25 @@ class LoginWindow(ctk.CTkToplevel):
         
         self.lbl_msg = ctk.CTkLabel(self, text="", text_color="red")
         self.lbl_msg.pack(pady=10)
+        self.lbl_hwid = ctk.CTkLabel(self, text=f"ID EQUIPO: {LicenseManager.get_hwid()}", font=("Arial", 9), text_color="#555")
+        self.lbl_hwid.pack(side="bottom", pady=5)
         
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def check_key(self):
         l = LANG[self.lang_code]
         key = self.entry.get().strip().upper()
-        if LicenseManager.validate(key):
+        if not key: return
+        self.lbl_msg.configure(text="Validando...", text_color="white")
+        self.update()
+        success, msg = LicenseManager.validate(key)
+        if success:
             LicenseManager.save(key)
             self.lbl_msg.configure(text=l["login_success"], text_color="green")
-            self.after(1000, self.finish)
+            messagebox.showinfo("YKZ OPTI", f"¡Activado!\n{msg}")
+            self.after(500, self.finish)
         else:
-            self.lbl_msg.configure(text=l["login_fail"], text_color="red")
+            self.lbl_msg.configure(text=msg, text_color="red")
 
     def finish(self):
         self.destroy()
@@ -1618,12 +1664,17 @@ class LoginWindow(ctk.CTkToplevel):
     def check_key(self):
         l = LANG[self.lang_code]
         key = self.entry.get().strip().upper()
-        if LicenseManager.validate(key):
+        if not key: return
+        self.lbl_msg.configure(text="Validando...", text_color="white")
+        self.update()
+        success, msg = LicenseManager.validate(key)
+        if success:
             LicenseManager.save(key)
             self.lbl_msg.configure(text=l["login_success"], text_color="green")
-            self.after(1000, self.finish)
+            messagebox.showinfo("YKZ OPTI", f"¡Activado!\n{msg}")
+            self.after(500, self.finish)
         else:
-            self.lbl_msg.configure(text=l["login_fail"], text_color="red")
+            self.lbl_msg.configure(text=msg, text_color="red")
 
     def finish(self):
         self.destroy()
