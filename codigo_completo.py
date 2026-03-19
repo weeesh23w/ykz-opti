@@ -171,7 +171,8 @@ LANG = {
         "drv_col_man": "FABRICANTE",
         "drv_col_ver": "VER. INSTALADA",
         "drv_col_date": "FECHA",
-        "drv_col_status": "ESTADO"
+        "drv_col_status": "ESTADO",
+        "nav_website": "🌐  Sitio Web"
     },
     "EN": {
         "nav_home": "📊  My Components",
@@ -289,7 +290,8 @@ LANG = {
         "drv_col_man": "MANUFACTURER",
         "drv_col_ver": "INSTALLED VER.",
         "drv_col_date": "DATE",
-        "drv_col_status": "STATUS"
+        "drv_col_status": "STATUS",
+        "nav_website": "🌐  Website"
     }
 }
 
@@ -1859,6 +1861,7 @@ class PurpleApp(ctk.CTk):
         self.btn_repair = self.create_nav_btn(LANG[self.current_lang]["nav_repair"], self.show_repair)
         self.btn_power = self.create_nav_btn(LANG[self.current_lang]["nav_power"], self.show_power)
         self.btn_activa = self.create_nav_btn(LANG[self.current_lang]["nav_activa"], self.show_activa)
+        self.btn_website = self.create_nav_btn(LANG[self.current_lang]["nav_website"], self.show_website)
         
         ctk.CTkFrame(self.sidebar, height=1, fg_color="#330033").pack(fill="x", padx=20, pady=10)
         
@@ -1918,6 +1921,7 @@ class PurpleApp(ctk.CTk):
         self.btn_repair.configure(text=l["nav_repair"])
         self.btn_power.configure(text=l["nav_power"])
         self.btn_activa.configure(text=l["nav_activa"])
+        self.btn_website.configure(text=l["nav_website"])
         self.btn_update.configure(text=l["btn_update"])
         
         if hasattr(self, 'lbl_sys_summary'): self.lbl_sys_summary.configure(text=l["sys_summary"])
@@ -2078,6 +2082,10 @@ class PurpleApp(ctk.CTk):
         self._hide_all_views()
         self.view_amd.pack(fill="both", expand=True)
         self._update_nav(self.btn_amd)
+
+    def show_website(self):
+        import webbrowser
+        webbrowser.open("https://ykz-opti.vercel.app")
         if hasattr(self, 'lbl_logo'):
             self.lbl_logo.pack_forget()
 
