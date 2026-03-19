@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.1.9"
+CURRENT_VERSION = "3.1.10"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -2180,8 +2180,10 @@ class PurpleApp(ctk.CTk):
             pythoncom.CoInitialize()
             c = wmi.WMI()
             
+            # CPU
+            cpu_data = {}
             for cpu in c.Win32_Processor():
-                self.update_card("cpu", {
+                cpu_data = {
                     "Modelo": cpu.Name, 
                     "Núcleos Lógicos": f"{cpu.NumberOfLogicalProcessors}", 
                     "Núcleos Físicos": f"{cpu.NumberOfCores}",
@@ -2190,10 +2192,14 @@ class PurpleApp(ctk.CTk):
                     "L2 Cache": f"{cpu.L2CacheSize or 0} KB",
                     "L3 Cache": f"{cpu.L3CacheSize or 0} KB",
                     "Serial/ID HW": cpu.ProcessorId or "N/A"
-                })
+                }
                 break
+            if cpu_data: self.update_card("cpu", cpu_data)
             
+            # GPU
+            gpu_found = False
             for gpu in c.Win32_VideoController():
+                gpu_found = True
                 ram_gb = "N/A"
                 if gpu.AdapterRAM:
                     try:
@@ -2208,6 +2214,8 @@ class PurpleApp(ctk.CTk):
                     "Driver Fecha": gpu.DriverDate.split('.')[0] if gpu.DriverDate else "N/A",
                     "Serial/ID HW": gpu.PNPDeviceID or "N/A"
                 })
+            if not gpu_found:
+                self.update_card("gpu", {"Estado": "No detectada o Genérica"})
             
             ram_info = {}
             total_gb = 0
