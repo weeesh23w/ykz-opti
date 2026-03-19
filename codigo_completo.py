@@ -158,19 +158,6 @@ LANG = {
         "debloat_c2_t": "Quitar Bloatware", "debloat_c2_d": "Elimina apps nativas (TikTok, Xbox, etc).",
         "sec_title": "SEGURIDAD Y RESPALDO",
         "sec_c1_t": "Crear Punto", "sec_c1_d": "Crea un Punto de Restauración del Sistema ahora.",
-        "lang_opt": "Español",
-        "login_title": "ACTIVACIÓN REQUERIDA",
-        "login_desc": "Introduce tu clave de producto para continuar:",
-        "login_btn": "ACTIVAR AHORA",
-        "login_ph": "YKZ-XXXX-XXXX-XXXX",
-        "login_success": "¡Activado!",
-        "login_fail": "Clave inválida.",
-        "btn_buy_sidebar": "ACTIVATE NOW",
-        "tt_license": "Introducir Clave de Licencia",
-        "drv_col_dev": "DISPOSITIVO",
-        "drv_col_man": "FABRICANTE",
-        "drv_col_ver": "VER. INSTALADA",
-        "drv_col_date": "FECHA",
         "drv_col_status": "ESTADO",
         "nav_website": "🌐  Sitio Web"
     },
@@ -277,26 +264,12 @@ LANG = {
         "debloat_c2_t": "Remove Bloatware", "debloat_c2_d": "Removes native apps (TikTok, Xbox, etc).",
         "sec_title": "SECURITY & BACKUP",
         "sec_c1_t": "Create Point", "sec_c1_d": "Creates a System Restore Point immediately." ,
-        "lang_opt": "English",
-        "login_title": "ACTIVATION REQUIRED",
-        "login_desc": "Enter your product key to continue:",
-        "login_btn": "ACTIVATE NOW",
-        "login_ph": "YKZ-XXXX-XXXX-XXXX",
-        "login_success": "Activated!",
-        "login_fail": "Invalid key.",
-        "btn_buy_sidebar": "ACTIVATE NOW",
-        "tt_license": "Enter License Key",
-        "drv_col_dev": "DEVICE",
-        "drv_col_man": "MANUFACTURER",
-        "drv_col_ver": "INSTALLED VER.",
-        "drv_col_date": "DATE",
         "drv_col_status": "STATUS",
         "nav_website": "🌐  Website"
     }
 }
 
-# --- License Management Removed ---
-# Licenses will be handled via Discord. Access is now direct.
+# --- Proceso de Inicio ---
 
 class GlitchLogo(ctk.CTkFrame):
     """
@@ -1434,7 +1407,6 @@ class InfoCard(ctk.CTkFrame):
         v = ctk.CTkLabel(row, text=str(value), font=("Roboto", 13), text_color=COLOR_TEXT_MAIN, anchor="e", wraplength=230, justify="right")
         v.pack(side="right", fill="x")
 
-# Duplicate LicenseManager class removed from here to avoid conflicts. Logic consolidated above.
 
 
 
@@ -2381,5 +2353,5 @@ if __name__ == "__main__":
     create_start_menu_shortcut()
     copy_to_desktop()
     app = PurpleApp()
-    app.title(f"YKZ OPTI {CURRENT_VERSION} [PREMIUM]")
+    app.title(f"YKZ OPTI {CURRENT_VERSION}")
     app.mainloop()
