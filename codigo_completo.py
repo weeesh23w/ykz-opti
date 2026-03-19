@@ -1861,7 +1861,6 @@ class PurpleApp(ctk.CTk):
         self.btn_repair = self.create_nav_btn(LANG[self.current_lang]["nav_repair"], self.show_repair)
         self.btn_power = self.create_nav_btn(LANG[self.current_lang]["nav_power"], self.show_power)
         self.btn_activa = self.create_nav_btn(LANG[self.current_lang]["nav_activa"], self.show_activa)
-        self.btn_website = self.create_nav_btn(LANG[self.current_lang]["nav_website"], self.show_website)
         
         ctk.CTkFrame(self.sidebar, height=1, fg_color="#330033").pack(fill="x", padx=20, pady=10)
         
@@ -1872,6 +1871,10 @@ class PurpleApp(ctk.CTk):
         self.btn_update = ctk.CTkButton(self.sidebar, text=LANG[self.current_lang]["btn_update"], height=32, corner_radius=8, fg_color="#110011", hover_color=COLOR_PANEL, 
                       text_color=COLOR_TEXT_SUB, font=("Roboto", 12, "bold"), command=lambda: self.check_update(manual=True))
         self.btn_update.pack(side="bottom", pady=(0, 10), padx=20)
+
+        self.btn_website = ctk.CTkButton(self.sidebar, text=LANG[self.current_lang]["nav_website"], height=32, corner_radius=8, fg_color="#110011", hover_color=COLOR_PANEL, 
+                      text_color=COLOR_TEXT_MAIN, font=("Roboto", 12, "bold"), command=self.show_website)
+        self.btn_website.pack(side="bottom", pady=(0, 10), padx=20)
         
         ctk.CTkLabel(self.sidebar, text=f"v{CURRENT_VERSION}", font=("Arial", 10), text_color="#555").pack(side="bottom", pady=(0, 10))
 
