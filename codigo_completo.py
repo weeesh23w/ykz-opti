@@ -293,165 +293,8 @@ LANG = {
     }
 }
 
-# --- License Management ---
-class LicenseManager:
-    LICENSE_FILE = os.path.join(os.getenv('APPDATA'), "ykz_license.json")
-    API_URL = "https://ykz-opti.vercel.app/api/activate"
-
-    _cached_hwid = None
-    @staticmethod
-    def get_hwid():
-        if LicenseManager._cached_hwid: return LicenseManager._cached_hwid
-        try:
-            import platform, hashlib, uuid
-            raw = f"{platform.node()}-{platform.processor()}-{uuid.getnode()}"
-            LicenseManager._cached_hwid = hashlib.sha256(raw.encode()).hexdigest()[:16].upper()
-            return LicenseManager._cached_hwid
-        except:
-            return "UNKNOWN-HWID"
-
-    @staticmethod
-    def get_public_ip():
-        try:
-            import urllib.request
-            return urllib.request.urlopen('https://api.ipify.org', timeout=5).read().decode('utf8')
-        except:
-            return "0.0.0.0"
-
-    @staticmethod
-    def validate(key):
-        """Validación online contra Vercel API"""
-        hwid = LicenseManager.get_hwid()
-        ip = LicenseManager.get_public_ip()
-        
-        import urllib.request, json
-        data = json.dumps({"key": key, "hwid": hwid, "ip": ip}).encode('utf-8')
-        
-        try:
-            req = urllib.request.Request(LicenseManager.API_URL, data=data)
-            req.add_header('Content-Type', 'application/json')
-            with urllib.request.urlopen(req, timeout=12) as response:
-                res = json.loads(response.read().decode())
-                if res.get("success"):
-                    return True, res.get("message", "Activado con éxito")
-                else:
-                    return False, res.get("error", "Llave inválida")
-        except Exception as e:
-            # Fallback de emergencia si el servidor cae (solo para llaves maestras conocidas)
-            if key in ["YKZ-ELITE-2026", "YKZ-MASTER-FIX-2026"]:
-                return True, "ACCESO DE EMERGENCIA (Offline)"
-            return False, f"Servidor no disponible: {str(e)[:30]}"
-
-    @staticmethod
-    def save(key):
-        try:
-            with open(LicenseManager.LICENSE_FILE, "w") as f:
-                json.dump({"key": key, "hwid": LicenseManager.get_hwid(), "activated": True, "date": time.strftime("%Y-%m-%d")}, f)
-        except: pass
-
-    @staticmethod
-    def load():
-        if os.path.exists(LicenseManager.LICENSE_FILE):
-            try:
-                with open(LicenseManager.LICENSE_FILE, "r") as f:
-                    data = json.load(f)
-                    if data.get("hwid") == LicenseManager.get_hwid():
-                        return data.get("key")
-            except: pass
-        return None
-
-class LoginWindow(ctk.CTkToplevel):
-    def __init__(self, parent, on_success):
-        super().__init__(parent)
-        self.on_success = on_success
-        self.geometry("450x450")
-        self.overrideredirect(True)
-        
-        # Try to get language from parent or default to ES
-        self.lang_code = "ES"
-        try:
-            if hasattr(parent, "current_lang"):
-                self.lang_code = parent.current_lang
-        except: pass
-        l = LANG[self.lang_code]
-
-        self.configure(fg_color="#000000") # Pure black for maximum contrast
-        
-        # Centering
-        self.update_idletasks()
-        w, h = 380, 280
-        ws = self.winfo_screenwidth()
-        hs = self.winfo_screenheight()
-        x = (ws/2) - (w/2)
-        y = (hs/2) - (h/2)
-        self.geometry(f'{w}x{h}+{int(x)}+{int(y)}')
-        self.grab_set()
-        self.attributes("-topmost", True)
-        
-        # Main container with NEON border
-        self.main_frame = ctk.CTkFrame(self, fg_color="#080008", border_color="#FF00FF", border_width=3, corner_radius=25)
-        self.main_frame.pack(fill="both", expand=True, padx=5, pady=5)
-
-        # Close button
-        self.btn_close = ctk.CTkButton(self.main_frame, text="✕", width=30, height=30, fg_color="transparent", 
-                                      hover_color="#330033", text_color="white", command=lambda: sys.exit(0))
-        self.btn_close.place(x=340, y=10)
-        
-        # Title Label
-        ctk.CTkLabel(self.main_frame, text="ACTIVACIÓN", font=("Arial", 22, "bold"), text_color="#FF00FF").pack(pady=(30, 5))
-        
-        ctk.CTkLabel(self.main_frame, text=l["login_desc"], font=("Arial", 14), text_color=COLOR_TEXT_SUB).pack(pady=5)
-        
-        self.entry = ctk.CTkEntry(self.main_frame, width=380, placeholder_text=l["login_ph"], 
-                                 justify="center", height=60, font=("Consolas", 18, "bold"), 
-                                 fg_color="#000000", border_color="#FF00FF", text_color="#FF00FF")
-        self.entry.pack(pady=25)
-        
-        self.btn_activate = ctk.CTkButton(self.main_frame, text=l["login_btn"].upper(), width=380, height=65, 
-                                         font=("Arial", 18, "bold"), fg_color="#FF00FF", 
-                                         hover_color="#CC00CC", text_color="white", command=self.check_key)
-        self.btn_activate.pack(pady=5)
-        
-        self.lbl_msg = ctk.CTkLabel(self.main_frame, text="", font=("Arial", 12))
-        self.lbl_msg.pack(pady=10)
-
-        self.lbl_hwid = ctk.CTkLabel(self.main_frame, text=f"HWID: {LicenseManager.get_hwid()}", 
-                                    font=("Arial", 9), text_color="#222")
-        self.lbl_hwid.pack(side="bottom", pady=5)
-
-    def check_key(self):
-        l = LANG[self.lang_code]
-        key = self.entry.get().strip().upper()
-        if not key: return
-        
-        self.btn_activate.configure(state="disabled", text="CONECTANDO...")
-        self.lbl_msg.configure(text="ESTABLECIENDO CONEXIÓN SEGURA...", text_color="white")
-        self.update()
-        
-        def run_val():
-            success, msg = LicenseManager.validate(key)
-            self.after(0, lambda: self.show_result(success, msg, key))
-            
-        threading.Thread(target=run_val, daemon=True).start()
-
-    def show_result(self, success, msg, key):
-        l = LANG[self.lang_code]
-        self.btn_activate.configure(state="normal", text=l["login_btn"].upper())
-        if success:
-            LicenseManager.save(key)
-            self.lbl_msg.configure(text="¡ACCESO CONCEDIDO!", text_color="#00FF00")
-            self.main_frame.configure(border_color="#00FF00")
-            # Sin messagebox para evitar bloqueos
-            self.after(1000, self.finish)
-        else:
-            self.lbl_msg.configure(text=msg, text_color="#FF0000")
-
-    def finish(self):
-        self.destroy()
-        self.on_success()
-
-    def on_close(self):
-        sys.exit(0)
+# --- License Management Removed ---
+# Licenses will be handled via Discord. Access is now direct.
 
 class GlitchLogo(ctk.CTkFrame):
     """
@@ -1801,8 +1644,8 @@ class PurpleApp(ctk.CTk):
         self.set_icon()
         self.check_security()
         self.withdraw()
-        # Small delay to ensure the OS/Window Manager is ready for a TopLevel
-        self.after(200, self.check_license_flow)
+        # Direct access: start intro sequence
+        self.after(200, self.start_intro)
 
     def check_security(self):
         """Basic Anti-Debug and Integrity Check"""
@@ -1816,14 +1659,7 @@ class PurpleApp(ctk.CTk):
         except:
             pass
 
-    def check_license_flow(self):
-        saved_key = LicenseManager.load()
-        if saved_key and LicenseManager.validate(saved_key):
-            self.start_intro()
-        else:
-            self.login = LoginWindow(self, self.start_intro)
-            self.login.deiconify()
-            self.login.focus_force()
+    # check_license_flow removed for direct access
 
     def start_intro(self):
         # Start pre-fetching hardware data early
@@ -2036,19 +1872,7 @@ class PurpleApp(ctk.CTk):
         
         ctk.CTkLabel(self.sidebar, text=f"v{CURRENT_VERSION}", font=("Arial", 10), text_color="#555").pack(side="bottom", pady=(0, 10))
 
-        # Bottom Frame for License Key + Activate Now (Driver Booster style)
-        self.bottom_sidebar_frame = ctk.CTkFrame(self.sidebar, fg_color="transparent")
-        self.bottom_sidebar_frame.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
-
-        self.btn_license_key = ctk.CTkButton(self.bottom_sidebar_frame, text="🔑", width=40, height=32, corner_radius=6, 
-                                            fg_color="#1a1a1a", hover_color="#333", font=("Arial", 14),
-                                            command=lambda: LoginWindow(self, lambda: messagebox.showinfo("YKZ OPTI", "Licencia actualizada con éxito.")))
-        self.btn_license_key.pack(side="left", padx=(0, 5))
-
-        self.btn_buy_sidebar = ctk.CTkButton(self.bottom_sidebar_frame, text=LANG[self.current_lang]["btn_buy_sidebar"], height=32, corner_radius=6, 
-                                            fg_color="#cc9900", hover_color="#e6ac00", text_color="black", font=("Roboto", 11, "bold"),
-                                            command=lambda: ctypes.windll.shell32.ShellExecuteW(None, "open", "https://buy.stripe.com/aFa4gr27pfvi3sKdn69IQ00", None, None, 1))
-        self.btn_buy_sidebar.pack(side="left", fill="x", expand=True)
+        # License buttons removed for direct access
 
         self.main_area = ctk.CTkFrame(self, fg_color=COLOR_BG) # Changed to COLOR_BG to avoid black gaps
         self.main_area.pack(side="right", fill="both", expand=True, padx=20, pady=20)
