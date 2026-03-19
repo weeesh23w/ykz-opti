@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.1.8"
+CURRENT_VERSION = "3.1.9"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -1877,6 +1877,8 @@ class PurpleApp(ctk.CTk):
             logging.error(f"Error initializing views: {e}")
 
         self.show_home()
+        # Iniciar carga automática de datos tras un breve delay para fluidez de UI
+        self.after(500, self.load_data)
 
     def change_lang(self, choice):
         self.current_lang = "ES" if choice == "Español" else "EN"
@@ -2161,10 +2163,14 @@ class PurpleApp(ctk.CTk):
 
     def load_data(self):
         logging.info("Iniciando carga de datos de hardware...")
-        if hasattr(self, 'cards'):
-            for c in self.cards.values():
-                for w in c.content_area.winfo_children(): w.destroy()
+        l = LANG.get(getattr(self, 'current_lang', 'ES'), LANG["ES"])
         
+        # Opcional: Placeholders de carga para feedback visual inmediato
+        if hasattr(self, 'cards'):
+            for key in self.cards:
+                self.update_card(key, {l.get("intro_status2", "Cargando..."): ""})
+        
+        # Ejecutar WMI en un hilo (daemon=True) para no congelar la UI
         t = threading.Thread(target=self._fetch_wmi, daemon=True)
         t.start()
 
@@ -2257,12 +2263,20 @@ class PurpleApp(ctk.CTk):
             except: pass
 
     def update_card(self, key, data):
+        """Prepara la actualización de la tarjeta de forma segura desde hilos."""
         self.after(0, lambda: self._ui_update_card(key, data))
 
     def _ui_update_card(self, key, data):
         if hasattr(self, 'cards') and key in self.cards:
+            card = self.cards[key]
+            
+            # Limpiar contenido anterior antes de re-dibujar (solo si no es placeholder de una sola línea)
+            # o limpiar siempre para asegurar refresco total
+            for widget in card.content_area.winfo_children():
+                widget.destroy()
+                
             for k, v in data.items():
-                self.cards[key].add_row(k, v)
+                card.add_row(k, v)
 
 if __name__ == "__main__":
     import sys
