@@ -32,8 +32,8 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=None,
+        target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['resources\\ykz_clean.ico'],
+    icon=['resources\\ykz_new_logo.ico'],
 )

@@ -1639,11 +1639,27 @@ class PurpleApp(ctk.CTk):
         # Start pre-fetching hardware data early
         self.load_data()
         self.intro = IntroWindow(self, self.show_main)
-        # self.ensure_shortcut() # Skip shortcut creation in dev/recovery env
+        self.ensure_shortcut()
+
+    def ensure_shortcut(self):
+        if not getattr(sys, 'frozen', False):
+            return  # Solo creamos el shortcut si estamos ejecutando el .exe compilado
+        try:
+            import win32com.client
+            import os
+            startup = os.path.join(os.environ["APPDATA"], "Microsoft", "Windows", "Start Menu", "Programs", "YKZ Optimizer.lnk")
+            shell = win32com.client.Dispatch("WScript.Shell")
+            shortcut = shell.CreateShortCut(startup)
+            shortcut.TargetPath = sys.executable
+            shortcut.WorkingDirectory = os.path.dirname(sys.executable)
+            shortcut.IconLocation = sys.executable
+            shortcut.save()
+        except Exception as e:
+            logging.error(f"Shortcut creation error: {e}")
 
     def set_icon(self):
         try:
-            icon_path = get_resource_path(os.path.join(RESOURCE_DIR, "ykz_clean.ico"))
+            icon_path = get_resource_path(os.path.join(RESOURCE_DIR, "ykz_new_logo.ico"))
             if os.path.exists(icon_path):
                 self.iconbitmap(default=icon_path)
         except Exception as e:
