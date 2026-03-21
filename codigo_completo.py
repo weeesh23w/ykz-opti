@@ -614,8 +614,10 @@ class BaseCommandView(ctk.CTkFrame):
             full_path = get_resource_path(os.path.join(RESOURCE_DIR, img_path))
             if os.path.exists(full_path):
                 try:
-                    from PIL import Image
+                    from PIL import Image, ImageOps
                     pil_img = Image.open(full_path)
+                    # Crop and fit to proper 410x120 aspect ratio to prevent stretching
+                    pil_img = ImageOps.fit(pil_img, (410, 120), Image.Resampling.LANCZOS)
                     # Create a wide banner style
                     banner_tk = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(410, 120))
                     lbl_banner = ctk.CTkLabel(card, text="", image=banner_tk, corner_radius=15)
