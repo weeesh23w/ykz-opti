@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.1.11"
+CURRENT_VERSION = "3.1.12"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -1643,7 +1643,7 @@ class PurpleApp(ctk.CTk):
 
     def set_icon(self):
         try:
-            icon_path = get_resource_path(os.path.join(RESOURCE_DIR, "icon_chino.ico"))
+            icon_path = get_resource_path(os.path.join(RESOURCE_DIR, "ykz_clean.ico"))
             if os.path.exists(icon_path):
                 self.iconbitmap(default=icon_path)
         except Exception as e:
@@ -2341,7 +2341,8 @@ def create_start_menu_shortcut():
     """Crea un acceso directo en el Menú Inicio y Escritorio."""
     try:
         if not getattr(sys, 'frozen', False): return
-        app_path = sys.executable
+        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+        target_exe_path = os.path.join(desktop_path, "YKZ_Optimizer.exe")
         shortcut_name = "YKZ Optimizer.lnk"
         
         # Paths
@@ -2349,9 +2350,8 @@ def create_start_menu_shortcut():
         
         for folder in [programs_path]:
             target = os.path.join(folder, shortcut_name)
-            if not os.path.exists(target):
-                ps_script = f'$s=(New-Object -COM WScript.Shell).CreateShortcut("{target}");$s.TargetPath="{app_path}";$s.WorkingDirectory="{os.path.dirname(app_path)}";$s.Save()'
-                subprocess.run(["powershell", "-Command", ps_script], capture_output=True, creationflags=0x08000000)
+            ps_script = f'$s=(New-Object -COM WScript.Shell).CreateShortcut("{target}");$s.TargetPath="{target_exe_path}";$s.WorkingDirectory="{desktop_path}";$s.Save()'
+            subprocess.run(["powershell", "-Command", ps_script], capture_output=True, creationflags=0x08000000)
     except: pass
 
 def copy_to_desktop():
