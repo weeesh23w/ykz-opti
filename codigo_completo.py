@@ -614,12 +614,22 @@ class BaseCommandView(ctk.CTkFrame):
             full_path = get_resource_path(os.path.join(RESOURCE_DIR, img_path))
             if os.path.exists(full_path):
                 try:
-                    from PIL import Image, ImageOps
-                    pil_img = Image.open(full_path)
-                    # Crop and fit to proper 410x120 aspect ratio to prevent stretching
-                    pil_img = ImageOps.fit(pil_img, (410, 120), Image.Resampling.LANCZOS)
+                    from PIL import Image, ImageOps, ImageFilter
+                    pil_img = Image.open(full_path).convert("RGBA")
+                    
+                    # Create blurred background that fills the banner
+                    bg = ImageOps.fit(pil_img, (410, 120), method=Image.Resampling.LANCZOS)
+                    # Apply strong blur to bg
+                    bg = bg.filter(ImageFilter.GaussianBlur(15))
+                    
+                    # Create uncropped, transparent-padded foreground
+                    fg = ImageOps.pad(pil_img, (410, 120), method=Image.Resampling.LANCZOS, color=(0,0,0,0))
+                    
+                    # Combine background and foreground
+                    bg.paste(fg, (0, 0), fg)
+                    
                     # Create a wide banner style
-                    banner_tk = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(410, 120))
+                    banner_tk = ctk.CTkImage(light_image=bg, dark_image=bg, size=(410, 120))
                     lbl_banner = ctk.CTkLabel(card, text="", image=banner_tk, corner_radius=15)
                     lbl_banner.grid(row=0, column=0, columnspan=3, sticky="new", padx=2, pady=2)
                     content_row = 1
