@@ -18,7 +18,7 @@ import subprocess
 from PIL import Image, ImageTk
 
 # --- Configuration & Theme ---
-CURRENT_VERSION = "3.1.12"
+CURRENT_VERSION = "3.1.13"
 # [USER CONFIG] Cambia esto por la URL RAW de tu archivo version.json en GitHub/Pastebin
 # Ejemplo estructura JSON: {"version": "2.1.0", "url": "https://link/to/new_exe.exe"}
 UPDATE_JSON_URL = "https://raw.githubusercontent.com/weeesh23w/ykz-opti/main/version.json" 
@@ -33,16 +33,16 @@ SPLASH_PREFERRED_NAMES = ["splash_original.jpg", "splash_anime.jpg", "splash_sta
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("dark-blue") # We will override with custom colors
 
-# Colors (Purple Theme + Starfield)
-COLOR_BG = "#050005"       # Deep purple-black background
-COLOR_PANEL = "#120012"    # Dark purple for panels
-COLOR_ACCENT = "#9b30ff"   # Purple accent
-COLOR_ACCENT_HOVER = "#7a1ed6"  # Darker purple hover
-COLOR_TEXT_MAIN = "#FFFFFF" # Pure white for headers
-COLOR_TEXT_SUB = "#BBBBBB"  # Soft silver for descriptions
-COLOR_SUCCESS = "#9b30ff"   # Purple
-COLOR_DANGER = "#ff4444"    # Red for errors
-COLOR_WARNING = "#ffaa00"   # Orange for warnings
+# Modern Premium Colors
+COLOR_BG = "#0B0B11"       # Sleek graphite/black background
+COLOR_PANEL = "#151521"    # Premium dark panel
+COLOR_ACCENT = "#8A2BE2"   # BlueViolet / neon purple gradient feel
+COLOR_ACCENT_HOVER = "#9B30FF"
+COLOR_TEXT_MAIN = "#FFFFFF"
+COLOR_TEXT_SUB = "#9E9EA7" # Soft silver/gray
+COLOR_SUCCESS = "#20C997"  # Teal/Green
+COLOR_DANGER = "#FF4B4B"   # Modern red
+COLOR_WARNING = "#F5A623"  # Orange
 
 # --- Translations ---
 LANG = {
@@ -581,8 +581,51 @@ class BaseCommandView(ctk.CTkFrame):
         self.lbl_title = ctk.CTkLabel(self, text=title, font=("Arial", 24, "bold"), text_color="white")
         self.lbl_title.pack(pady=(20, 30), padx=20, anchor="w")
 
-        self.content_frame = ctk.CTkScrollableFrame(self, fg_color=COLOR_BG)
-        self.content_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        self.content_frame = ctk.CTkScrollableFrame(self, fg_color="#0A0710")
+        self.content_frame.pack(fill="both", expand=True, padx=0, pady=0)
+        
+        # Initialize animated particles on the canvas backdrop
+        def init_particles():
+            if not hasattr(self.content_frame, "_parent_canvas"): return
+            c = self.content_frame._parent_canvas
+            self.particles = []
+            import random
+            for _ in range(50):
+                x, y = random.randint(0, 1500), random.randint(0, 2000)
+                r = random.randint(1, 4)
+                color = random.choice(["#2D1B4E", "#1F1235", "#3D2B5E", "#4E3B6E", "#5A2E8A"])
+                p = c.create_oval(x, y, x+r, y+r, fill=color, outline="")
+                self.particles.append({"id": p, "vx": random.uniform(-0.2, 0.2), "vy": random.uniform(-0.2, 0.2)})
+            
+            # Cursor glow
+            self.glow = c.create_oval(-100, -100, -100, -100, fill="", outline="#3D2B5E", width=2)
+            
+            def update_p():
+                if not self.winfo_exists(): return
+                try:
+                    for p in self.particles:
+                        c.move(p["id"], p["vx"], p["vy"])
+                        coords = c.coords(p["id"])
+                        if coords and (coords[0] < -50 or coords[0] > 1500 or coords[1] < -50 or coords[1] > 2000):
+                            nx, ny = random.randint(0, 1500), random.randint(-50, 2000)
+                            c.coords(p["id"], nx, ny, nx+r, ny+r)
+                except: pass
+                self.after(40, update_p) # ~25 FPS to save CPU
+            self.after(100, update_p)
+            
+            def parallax(e):
+                cx, cy = e.x, e.y
+                try:
+                    c.coords(self.glow, cx-30, cy-30, cx+30, cy+30)
+                    for p in self.particles:
+                        c.move(p["id"], -(cx-500)*0.0003*p["vx"], -(cy-350)*0.0003*p["vy"])
+                except: pass
+            
+            self.content_frame.bind("<Motion>", parallax, add="+")
+            for child in self.content_frame.winfo_children():
+                child.bind("<Motion>", parallax, add="+")
+                
+        self.after(200, init_particles)
         self.content_frame.columnconfigure((0, 1), weight=1)
         
         # Fluid Scroll binding - removed bind_all to prevent global event hijacking
@@ -603,12 +646,11 @@ class BaseCommandView(ctk.CTkFrame):
         except:
             pass
 
-    def create_card(self, r, c, icon, title, desc, cmd, color=COLOR_ACCENT, img_path=None):
-        card = ctk.CTkFrame(self.content_frame, fg_color=COLOR_PANEL, corner_radius=15, border_width=1, border_color="#330033")
-        card.grid(row=r, column=c, padx=12, pady=12, sticky="nsew")
-        card.columnconfigure(1, weight=1)
-
-        # Background Image (Banner)
+    def create_card(self, r, c, icon, title, desc, cmd, color=COLOR_ACCENT, img_path=None, action_type="switch"):
+        card = ctk.CTkFrame(self.content_frame, fg_color="#13111C", corner_radius=15, border_width=1, border_color="#2D1B4E")
+        card.grid(row=r, column=c, padx=15, pady=15, sticky="nsew")
+        card.columnconfigure(0, weight=1)
+        
         content_row = 0
         if img_path:
             full_path = get_resource_path(os.path.join(RESOURCE_DIR, img_path))
@@ -616,73 +658,80 @@ class BaseCommandView(ctk.CTkFrame):
                 try:
                     from PIL import Image, ImageOps, ImageFilter
                     pil_img = Image.open(full_path).convert("RGBA")
-                    
-                    # Create blurred background that fills the banner
-                    bg = ImageOps.fit(pil_img, (410, 120), method=Image.Resampling.LANCZOS)
-                    # Apply strong blur to bg
+                    bg = ImageOps.fit(pil_img, (410, 80), method=Image.Resampling.LANCZOS)
                     bg = bg.filter(ImageFilter.GaussianBlur(15))
-                    
-                    # Create uncropped, transparent-padded foreground
-                    fg = ImageOps.pad(pil_img, (410, 120), method=Image.Resampling.LANCZOS, color=(0,0,0,0))
-                    
-                    # Combine background and foreground
+                    fg = ImageOps.pad(pil_img, (410, 80), method=Image.Resampling.LANCZOS, color=(0,0,0,0))
                     bg.paste(fg, (0, 0), fg)
-                    
-                    # Create a wide banner style
-                    banner_tk = ctk.CTkImage(light_image=bg, dark_image=bg, size=(410, 120))
-                    lbl_banner = ctk.CTkLabel(card, text="", image=banner_tk, corner_radius=15)
-                    lbl_banner.grid(row=0, column=0, columnspan=3, sticky="new", padx=2, pady=2)
+                    banner_tk = ctk.CTkImage(light_image=bg, dark_image=bg, size=(410, 80))
+                    lbl_banner = ctk.CTkLabel(card, text="", image=banner_tk, corner_radius=12)
+                    lbl_banner.grid(row=0, column=0, sticky="new", padx=2, pady=2)
                     content_row = 1
-                except Exception as e:
-                    logging.error(f"Card image error: {e}")
+                except Exception:
+                    pass
         
-        if icon:
-            icon_bg = ctk.CTkFrame(card, fg_color="#110011", width=45, height=45, corner_radius=10)
-            icon_bg.grid(row=content_row, column=0, padx=(15, 5), pady=15, sticky="nw")
-            icon_bg.pack_propagate(False)
-            ctk.CTkLabel(icon_bg, text=icon, font=("Segoe UI Emoji", 24)).place(relx=0.5, rely=0.5, anchor="center")
-            icon_padx = (15, 5)
+        header = ctk.CTkFrame(card, fg_color="transparent")
+        header.grid(row=content_row, column=0, sticky="ew", padx=15, pady=(15, 5))
+        
+        dot = ctk.CTkFrame(header, width=8, height=8, corner_radius=4, fg_color=color)
+        dot.pack(side="left", pady=2)
+        
+        lbl_title = ctk.CTkLabel(header, text=title, font=("Segoe UI", 15, "bold"), text_color="#FFFFFF")
+        lbl_title.pack(side="left", padx=(8, 0))
+        
+        desc_frame = ctk.CTkFrame(card, fg_color="transparent")
+        desc_frame.grid(row=content_row+1, column=0, sticky="nsew", padx=15, pady=(0, 10))
+        lbl_desc = ctk.CTkLabel(desc_frame, text=desc, font=("Segoe UI", 12), text_color=COLOR_TEXT_SUB, justify="left", wraplength=220)
+        lbl_desc.pack(anchor="w")
+        
+        bottom = ctk.CTkFrame(card, fg_color="transparent")
+        bottom.grid(row=content_row+2, column=0, sticky="ew", padx=15, pady=(0, 15))
+        
+        widget = None
+        def do_cmd(command_ref=cmd):
+            if not command_ref: return
+            if action_type == "switch":
+                import inspect
+                sig = inspect.signature(command_ref)
+                if len(sig.parameters) > 0:
+                    command_ref(widget.get() == 1)
+                else:
+                    command_ref()
+            else:
+                self.active_button_widget = widget
+                original_text = widget.cget("text")
+                widget.configure(text="⏳ Procesando...", state="disabled", fg_color="#2D1B4E")
+                widget._original_text = original_text
+                command_ref()
+            
+        if action_type == "switch":
+            widget = ctk.CTkSwitch(bottom, text="", width=45, progress_color=color, button_color="#5A2E8A", button_hover_color="#FFFFFF", command=do_cmd)
+            widget.pack(side="right")
         else:
-            icon_padx = (20, 5)
+            exec_text = "Ejecutar"
+            if "activ" in title.lower(): exec_text = "Activar"
+            elif "limp" in title.lower() or "elimina" in desc.lower(): exec_text = "Limpiar"
+            elif "restaur" in title.lower(): exec_text = "Crear ahora"
+            elif "scan" in title.lower() or "anális" in title.lower(): exec_text = "Analizar"
+            widget = ctk.CTkButton(bottom, text=exec_text, width=110, height=32, fg_color="#5A2E8A", hover_color="#7A3EBA", text_color="#FFFFFF", font=("Segoe UI", 12, "bold"), corner_radius=8, command=do_cmd)
+            widget.pack(side="right")
         
-        info_frame = ctk.CTkFrame(card, fg_color="transparent")
-        info_frame.grid(row=content_row, column=1, pady=10, padx=icon_padx, sticky="nsew")
-        info_frame.columnconfigure(0, weight=1)
-        
-        lbl_title = ctk.CTkLabel(info_frame, text=title, font=("Roboto", 14, "bold"), text_color=color, anchor="w", wraplength=180, justify="left")
-        lbl_title.grid(row=0, column=0, sticky="ew")
-        
-        lbl_desc = ctk.CTkLabel(info_frame, text=desc, font=("Roboto", 11), text_color=COLOR_TEXT_SUB, anchor="w", wraplength=180, justify="left")
-        lbl_desc.grid(row=1, column=0, sticky="ew")
-        
-        # Translation of ACTIVAR button text
-        btn_text = "ACTIVAR"
-        try:
-            # Try to get the language from the main app
-            main_app = self.master.master
-            if hasattr(main_app, "current_lang"):
-                btn_text = LANG[main_app.current_lang].get("btn_activar", "ACTIVAR")
-        except:
-            pass
-
-        btn = ctk.CTkButton(card, text=btn_text, width=90, height=34, corner_radius=8, font=("Roboto", 11, "bold"), fg_color=color, hover_color=COLOR_ACCENT_HOVER if color == COLOR_ACCENT else "#555", command=cmd)
-        btn.grid(row=content_row, column=2, padx=(5, 15), pady=15, sticky="e")
-        
-        # Store references for re-translation
         if not hasattr(self, 'cards_refs'): self.cards_refs = []
-        self.cards_refs.append((lbl_title, lbl_desc, btn))
+        self.cards_refs.append((lbl_title, lbl_desc, widget))
 
     def update_texts(self, l_title, card_texts, l_btn):
         self.lbl_title.configure(text=l_title)
         for i, ref in enumerate(self.cards_refs):
             ref[0].configure(text=card_texts[i][0])
             ref[1].configure(text=card_texts[i][1])
-            ref[2].configure(text=l_btn)
+            if isinstance(ref[2], ctk.CTkButton):
+                ref[2].configure(text=l_btn)
 
     def log(self, msg):
         pass
 
     def run_cmd(self, cmd_list, success_msg, silent=True):
+        active_btn = getattr(self, "active_button_widget", None)
+        self.active_button_widget = None
         def _run():
             try:
                 import ctypes
@@ -738,11 +787,18 @@ class BaseCommandView(ctk.CTkFrame):
                     Start-Sleep 5
                     $balloon.Dispose()
                     '''
-                    toast_args = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", toast_script]
-                    subprocess.run(toast_args, creationflags=0x08000000)
+                    subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", toast_script], creationflags=0x08000000)
                 
             except Exception as e:
                 self.log(f"ERROR: {e}")
+            finally:
+                if active_btn and active_btn.winfo_exists():
+                    try:
+                        active_btn.master.after(0, lambda: active_btn.configure(
+                            text=getattr(active_btn, "_original_text", "Hecho ✓"),
+                            state="normal", fg_color="#5A2E8A"
+                        ))
+                    except: pass
         
         threading.Thread(target=_run, daemon=True).start()
 
@@ -750,9 +806,9 @@ class OptimizationView(BaseCommandView):
     def __init__(self, master):
         l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
         super().__init__(master, l["opti_title"])
-        self.create_card(0, 0, "🚀", l["opti_c1_t"], l["opti_c1_d"], self.clean_temp)
-        self.create_card(0, 1, "⚡", l["opti_c2_t"], l["opti_c2_d"], self.optimize_network)
-        self.create_card(1, 0, "💿", l["opti_c3_t"], l["opti_c3_d"], self.optimize_ssd)
+        self.create_card(0, 0, "🚀", l["opti_c1_t"], l["opti_c1_d"], self.clean_temp, action_type="button")
+        self.create_card(0, 1, "⚡", l["opti_c2_t"], l["opti_c2_d"], self.optimize_network, action_type="button")
+        self.create_card(1, 0, "💿", l["opti_c3_t"], l["opti_c3_d"], self.optimize_ssd, action_type="button")
         self.create_card(1, 1, "🔓", l["opti_c4_t"], l["opti_c4_d"], self.unlock_processors)
         self.create_card(2, 0, "💤", l["opti_c5_t"], l["opti_c5_d"], self.disable_hibernate)
         self.create_card(2, 1, "⏱️", l["opti_c6_t"], l["opti_c6_d"], self.latency_fix)
@@ -781,32 +837,59 @@ class OptimizationView(BaseCommandView):
         cmd = [f'bcdedit /set numproc {count}']
         self.run_cmd(cmd, f"Núcleos desbloqueados ({count}).")
         
-    def disable_hibernate(self):
-        self.run_cmd(['powercfg -h off'], "Hibernación desactivada. Espacio liberado.")
+    def disable_hibernate(self, enable=True):
+        if enable:
+            self.run_cmd(['powercfg -h off'], "Hibernación desactivada. Espacio liberado.")
+        else:
+            self.run_cmd(['powercfg -h on'], "Hibernación activada de nuevo.")
 
-    def latency_fix(self):
+    def latency_fix(self, enable=True):
         cmds = [
             r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f',
             r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f',
             r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Priority" /t REG_DWORD /d 6 /f',
             r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f'
         ]
-        self.run_cmd(cmds, "Planificador de sistema optimizado para juegos.")
+        if enable:
+            self.run_cmd(cmds, "Planificador de sistema optimizado para juegos.")
+        else:
+            undo = [
+                r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 20 /f',
+                r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f',
+                r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Priority" /t REG_DWORD /d 2 /f',
+                r'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Scheduling Category" /t REG_SZ /d "Medium" /f'
+            ]
+            self.run_cmd(undo, "Planificador restaurado al valor por defecto.")
 
-    def disable_background_apps(self):
+    def disable_background_apps(self, enable=True):
         cmds = [
             'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications" /v GlobalUserDisabled /t REG_DWORD /d 1 /f',
             'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v BackgroundAppGlobalValue /t REG_DWORD /d 0 /f'
         ]
-        self.run_cmd(cmds, "Apps en segundo plano desactivadas.")
+        if enable:
+            self.run_cmd(cmds, "Apps en segundo plano desactivadas.")
+        else:
+            undo = [
+                'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications" /v GlobalUserDisabled /t REG_DWORD /d 0 /f',
+                'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v BackgroundAppGlobalValue /t REG_DWORD /d 1 /f'
+            ]
+            self.run_cmd(undo, "Apps secundarias permitidas de nuevo.")
 
-    def disable_gamebar(self):
+    def disable_gamebar(self, enable=True):
         cmds = [
             'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f',
             'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f',
             'reg add "HKCU\\Software\\Microsoft\\GameBar" /v UseMsXboxAppEnabled /t REG_DWORD /d 0 /f'
         ]
-        self.run_cmd(cmds, "GameBar y DVR desactivados.")
+        if enable:
+            self.run_cmd(cmds, "GameBar y DVR desactivados.")
+        else:
+            undo = [
+                'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 1 /f',
+                'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 1 /f',
+                'reg delete "HKCU\\Software\\Microsoft\\GameBar" /v UseMsXboxAppEnabled /f'
+            ]
+            self.run_cmd(undo, "GameBar activado.")
 
     def visual_performance(self):
         cmds = [
@@ -908,7 +991,7 @@ class NvidiaView(BaseCommandView):
         super().__init__(master, l["nv_title"])
         self.create_card(0, 0, "🟢", l["nv_c1_t"], l["nv_c1_d"], self.optimize_nvidia, color=COLOR_ACCENT)
         self.create_card(0, 1, "📬", l["nv_c2_t"], l["nv_c2_d"], self.msi_mode, color=COLOR_ACCENT)
-        self.create_card(1, 0, "🧹", l["nv_c3_t"], l["nv_c3_d"], self.clean_nvidia, color=COLOR_ACCENT)
+        self.create_card(1, 0, "🧹", l["nv_c3_t"], l["nv_c3_d"], self.clean_nvidia, color=COLOR_ACCENT, action_type="button")
         self.create_card(1, 1, "🔇", l["nv_c4_t"], l["nv_c4_d"], self.disable_hd_audio, color=COLOR_ACCENT)
         self.create_card(2, 0, "⚡", l["nv_c5_t"], l["nv_c5_d"], self.gpu_priority_irq, color=COLOR_ACCENT)
 
@@ -1015,10 +1098,10 @@ class CleaningView(BaseCommandView):
     def __init__(self, master):
         l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
         super().__init__(master, l["clean_title"])
-        self.create_card(0, 0, "🗑️", l["clean_c1_t"], l["clean_c1_d"], self.disk_cleanup, color=COLOR_ACCENT)
-        self.create_card(0, 1, "🌐", l["clean_c2_t"], l["clean_c2_d"], self.browser_cleanup, color=COLOR_ACCENT)
-        self.create_card(1, 0, "📡", l["clean_c3_t"], l["clean_c3_d"], self.network_reset, color=COLOR_ACCENT)
-        self.create_card(1, 1, "🏪", l["clean_c4_t"], l["clean_c4_d"], self.store_reset, color=COLOR_ACCENT)
+        self.create_card(0, 0, "🗑️", l["clean_c1_t"], l["clean_c1_d"], self.disk_cleanup, color=COLOR_ACCENT, action_type="button")
+        self.create_card(0, 1, "🌐", l["clean_c2_t"], l["clean_c2_d"], self.browser_cleanup, color=COLOR_ACCENT, action_type="button")
+        self.create_card(1, 0, "📡", l["clean_c3_t"], l["clean_c3_d"], self.network_reset, color=COLOR_ACCENT, action_type="button")
+        self.create_card(1, 1, "🏪", l["clean_c4_t"], l["clean_c4_d"], self.store_reset, color=COLOR_ACCENT, action_type="button")
 
     def disk_cleanup(self):
         cmds = [
@@ -1075,16 +1158,21 @@ class RepairView(BaseCommandView):
     def __init__(self, master):
         l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
         super().__init__(master, l["repair_title"])
-        self.create_card(0, 0, "💻", l["rep_c1_t"], l["rep_c1_d"], self.sfc_scan, color=COLOR_ACCENT)
-        self.create_card(0, 1, "🔍", l["rep_c2_t"], l["rep_c2_d"], self.dism_scan, color=COLOR_ACCENT)
-        self.create_card(1, 0, "🩹", l["rep_c3_t"], l["rep_c3_d"], self.dism_repair, color=COLOR_WARNING)
-        self.create_card(1, 1, "💽", l["rep_c4_t"], l["rep_c4_d"], self.chkdsk_scan, color=COLOR_ACCENT)
-        self.create_card(2, 0, "🔄", l["rep_c5_t"], l["rep_c5_d"], self.reset_update, color=COLOR_ACCENT)
-        self.create_card(2, 1, "🖼️", l["rep_c6_t"], l["rep_c6_d"], self.rebuild_icons, color=COLOR_ACCENT)
+        self.create_card(0, 0, "💻", l["rep_c1_t"], l["rep_c1_d"], self.sfc_scan, color=COLOR_ACCENT, action_type="button")
+        self.create_card(0, 1, "🔍", l["rep_c2_t"], l["rep_c2_d"], self.dism_scan, color=COLOR_ACCENT, action_type="button")
+        self.create_card(1, 0, "🩹", l["rep_c3_t"], l["rep_c3_d"], self.dism_repair, color=COLOR_WARNING, action_type="button")
+        self.create_card(1, 1, "💽", l["rep_c4_t"], l["rep_c4_d"], self.chkdsk_scan, color=COLOR_ACCENT, action_type="button")
+        self.create_card(2, 0, "🔄", l["rep_c5_t"], l["rep_c5_d"], self.reset_update, color=COLOR_ACCENT, action_type="button")
+        self.create_card(2, 1, "🖼️", l["rep_c6_t"], l["rep_c6_d"], self.rebuild_icons, color=COLOR_ACCENT, action_type="button")
+        self.create_card(3, 0, "🛡️", "Crear Punto de Restauración", "Crea un respaldo de tu configuración actual de Windows antes de optimizar.", self.create_restore_point, color=COLOR_SUCCESS, action_type="button")
 
     def sfc_scan(self):
         cmds = ['sfc /scannow']
-        self.run_cmd(cmds, "Proceso de comprobación de sistema lanzado. Se notificará el resultado.")
+        self.run_cmd(cmds, "Análisis de integridad en ejecución. (Revisa la consola para más detalles).")
+
+    def create_restore_point(self):
+        cmds = ['Enable-ComputerRestore -Drive "C:\\"', 'Checkpoint-Computer -Description "YKZ_Opti_Backup" -RestorePointType "MODIFY_SETTINGS"']
+        self.run_cmd(cmds, "Punto de restauración creado con éxito.")
 
     def dism_scan(self):
         cmds = ['DISM /Online /Cleanup-Image /ScanHealth']
@@ -1126,7 +1214,7 @@ class ActivacionView(BaseCommandView):
     def __init__(self, master):
         l = LANG.get(getattr(master.master, 'current_lang', 'ES'), LANG["ES"])
         super().__init__(master, l["act_title"])
-        self.create_card(0, 0, "🔑", l["act_c1_t"], l["act_c1_d"], self.activate_windows, color=COLOR_SUCCESS)
+        self.create_card(0, 0, "🔑", l["act_c1_t"], l["act_c1_d"], self.activate_windows, color=COLOR_SUCCESS, action_type="button")
 
     def activate_windows(self):
         def _run_admin():
@@ -1430,7 +1518,7 @@ class GamingView(BaseCommandView):
         self.create_card(0, 0, "", l["gaming_c1_t"], l["gaming_c1_d"], self.boost_fps, color=COLOR_ACCENT, img_path="valorant_bg.png")
         self.create_card(0, 1, "", l["gaming_c2_t"], l["gaming_c2_d"], self.boost_fivem, color=COLOR_ACCENT, img_path="fivem_bg.png")
         self.create_card(1, 0, "🖥️", l["gaming_c3_t"], l["gaming_c3_d"], self.fso_fix, color=COLOR_ACCENT)
-        self.create_card(1, 1, "🧠", l["gaming_c4_t"], l["gaming_c4_d"], self.clear_ram, color=COLOR_WARNING)
+        self.create_card(1, 1, "🧠", l["gaming_c4_t"], l["gaming_c4_d"], self.clear_ram, color=COLOR_WARNING, action_type="button")
 
     def boost_fps(self):
         l = LANG[getattr(self.master.master, 'current_lang', 'ES')]
@@ -1619,6 +1707,65 @@ class PurpleStarsBackground:
 
         self.canvas.after(16, self.animate)
 
+class ModernNavButton(ctk.CTkFrame):
+    def __init__(self, master, text, icon, command, **kwargs):
+        super().__init__(master, fg_color="transparent", height=42, corner_radius=6, cursor="hand2", **kwargs)
+        self.pack_propagate(False)
+        self.command = command
+        
+        # Limpiamos emojis del dict LANG (split por dobles espacios)
+        clean_text = text.split("  ")[-1].strip()
+        self.base_text = clean_text
+        
+        self.bind("<Button-1>", self._on_click)
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+        
+        # Acento lateral, escondido por defecto
+        self.accent = ctk.CTkFrame(self, width=4, corner_radius=2, fg_color="transparent")
+        self.accent.pack(side="left", fill="y", pady=8, padx=(0, 10))
+        
+        # Icono (usando Segoe UI Symbol en Windows queda muy bien)
+        self.lbl_icon = ctk.CTkLabel(self, text=icon, font=("Segoe UI Symbol", 16), text_color=COLOR_TEXT_SUB)
+        self.lbl_icon.pack(side="left", padx=(5, 10))
+        
+        # Texto
+        self.lbl_text = ctk.CTkLabel(self, text=clean_text, font=("Segoe UI", 13, "bold"), text_color="#D1D1D1")
+        self.lbl_text.pack(side="left")
+        
+        for w in [self.accent, self.lbl_icon, self.lbl_text]:
+            w.bind("<Button-1>", self._on_click)
+            w.bind("<Enter>", self._on_enter)
+            w.bind("<Leave>", self._on_leave)
+            
+    def _on_enter(self, e):
+        if self.cget("fg_color") == "transparent":
+            self.configure(fg_color="#1F1F30") # Hover suave
+            
+    def _on_leave(self, e):
+        if self.cget("fg_color") == "#1F1F30":
+            self.configure(fg_color="transparent")
+            
+    def _on_click(self, e):
+        if self.command:
+            self.command()
+            
+    def set_active(self, active):
+        if active:
+            self.configure(fg_color="#252538") # Fondo activo
+            self.accent.configure(fg_color=COLOR_ACCENT)
+            self.lbl_icon.configure(text_color=COLOR_ACCENT)
+            self.lbl_text.configure(text_color="#FFFFFF")
+        else:
+            self.configure(fg_color="transparent")
+            self.accent.configure(fg_color="transparent")
+            self.lbl_icon.configure(text_color=COLOR_TEXT_SUB)
+            self.lbl_text.configure(text_color="#D1D1D1")
+            
+    def configure_text(self, text):
+        clean_text = text.split("  ")[-1].strip()
+        self.base_text = clean_text
+        self.lbl_text.configure(text=clean_text)
 
 class PurpleApp(ctk.CTk):
     def __init__(self):
@@ -1836,31 +1983,45 @@ class PurpleApp(ctk.CTk):
         self.lbl_logo = GlitchLogo(self.sidebar, text="YKZ OPTI")
         self.lbl_logo.pack(pady=30)
         
-        self.nav_frame = ctk.CTkScrollableFrame(self.sidebar, width=220, fg_color="transparent")
+        self.nav_frame = ctk.CTkScrollableFrame(self.sidebar, width=220, fg_color="transparent", scrollbar_button_color="#151521", scrollbar_button_hover_color="#333333", scrollbar_fg_color="#151521")
         self.nav_frame.pack(fill="both", expand=True)
 
 
         
 
         
-        self.btn_home = self.create_nav_btn(LANG[self.current_lang]["nav_home"], self.show_home)
-        self.btn_opti = self.create_nav_btn(LANG[self.current_lang]["nav_opti"], self.show_opti)
-        self.btn_gaming = self.create_nav_btn(LANG[self.current_lang]["nav_gaming"], self.show_gaming)
-        self.btn_input = self.create_nav_btn(LANG[self.current_lang]["nav_input"], self.show_input)
-        self.btn_debloat = self.create_nav_btn(LANG[self.current_lang]["nav_debloat"], self.show_debloat)
-        self.btn_security = self.create_nav_btn(LANG[self.current_lang]["nav_security"], self.show_security)
+        self.btn_home = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_home"], "\uE80F", self.show_home)
+        self.btn_home.pack(fill="x", padx=10, pady=2)
+        self.btn_opti = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_opti"], "\uE9A1", self.show_opti)
+        self.btn_opti.pack(fill="x", padx=10, pady=2)
+        self.btn_gaming = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_gaming"], "\uE7FC", self.show_gaming)
+        self.btn_gaming.pack(fill="x", padx=10, pady=2)
+        self.btn_input = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_input"], "\uE909", self.show_input)
+        self.btn_input.pack(fill="x", padx=10, pady=2)
+        self.btn_debloat = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_debloat"], "\uE74C", self.show_debloat)
+        self.btn_debloat.pack(fill="x", padx=10, pady=2)
+        self.btn_security = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_security"], "\uE773", self.show_security)
+        self.btn_security.pack(fill="x", padx=10, pady=2)
         
         # Enable fluid scroll for sidebar too - removed bind_all
         self.nav_frame.bind("<MouseWheel>", lambda e: self.nav_frame._parent_canvas.yview_scroll(int(-1*(e.delta/60)), "units"))
         if is_laptop():
-            self.btn_laptop = self.create_nav_btn(LANG[self.current_lang]["nav_laptop"], self.show_laptop)
-        self.btn_nvidia = self.create_nav_btn(LANG[self.current_lang]["nav_nvidia"], self.show_nvidia)
-        self.btn_amd = self.create_nav_btn(LANG[self.current_lang]["nav_amd"], self.show_amd)
-        self.btn_cleaning = self.create_nav_btn(LANG[self.current_lang]["nav_cleaning"], self.show_cleaning)
-        self.btn_drivers = self.create_nav_btn(LANG[self.current_lang]["nav_drivers"], self.show_drivers)
-        self.btn_repair = self.create_nav_btn(LANG[self.current_lang]["nav_repair"], self.show_repair)
-        self.btn_power = self.create_nav_btn(LANG[self.current_lang]["nav_power"], self.show_power)
-        self.btn_activa = self.create_nav_btn(LANG[self.current_lang]["nav_activa"], self.show_activa)
+            self.btn_laptop = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_laptop"], "\uE7F8", self.show_laptop)
+            self.btn_laptop.pack(fill="x", padx=10, pady=2)
+        self.btn_nvidia = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_nvidia"], "\uE7B5", self.show_nvidia)
+        self.btn_nvidia.pack(fill="x", padx=10, pady=2)
+        self.btn_amd = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_amd"], "\uE7B5", self.show_amd)
+        self.btn_amd.pack(fill="x", padx=10, pady=2)
+        self.btn_cleaning = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_cleaning"], "\uE74D", self.show_cleaning)
+        self.btn_cleaning.pack(fill="x", padx=10, pady=2)
+        self.btn_drivers = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_drivers"], "\uE804", self.show_drivers)
+        self.btn_drivers.pack(fill="x", padx=10, pady=2)
+        self.btn_repair = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_repair"], "\uE90F", self.show_repair)
+        self.btn_repair.pack(fill="x", padx=10, pady=2)
+        self.btn_power = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_power"], "\uEBA3", self.show_power)
+        self.btn_power.pack(fill="x", padx=10, pady=2)
+        self.btn_activa = ModernNavButton(self.nav_frame, LANG[self.current_lang]["nav_activa"], "\uE72E", self.show_activa)
+        self.btn_activa.pack(fill="x", padx=10, pady=2)
         
         ctk.CTkFrame(self.sidebar, height=1, fg_color="#330033").pack(fill="x", padx=20, pady=10)
         
@@ -1880,29 +2041,23 @@ class PurpleApp(ctk.CTk):
 
         # License buttons removed for direct access
 
-        self.main_area = ctk.CTkFrame(self, fg_color=COLOR_BG) # Changed to COLOR_BG to avoid black gaps
+        self.main_area = ctk.CTkFrame(self, fg_color=COLOR_BG)
         self.main_area.pack(side="right", fill="both", expand=True, padx=20, pady=20)
-
-        self.view_home = ctk.CTkScrollableFrame(self.main_area, fg_color=COLOR_BG)
-        self.setup_home_grid()
         
-        self.view_opti = OptimizationView(self.main_area)
-        try:
-            self.view_gaming = GamingView(self.main_area)
-            self.view_input = InputLagView(self.main_area)
-            self.view_debloat = DebloatView(self.main_area)
-            self.view_security = SecurityView(self.main_area)
-            if is_laptop():
-                self.view_laptop = LaptopView(self.main_area)
-            self.view_nvidia = NvidiaView(self.main_area)
-            self.view_amd = AmdView(self.main_area)
-            self.view_cleaning = CleaningView(self.main_area)
-            self.view_drivers = DriversView(self.main_area)
-            self.view_repair = RepairView(self.main_area)
-            self.view_power = PowerPlanView(self.main_area)
-            self.view_activa = ActivacionView(self.main_area)
-        except Exception as e:
-            logging.error(f"Error initializing views: {e}")
+        self.view_home = None
+        self.view_opti = None
+        self.view_gaming = None
+        self.view_input = None
+        self.view_debloat = None
+        self.view_security = None
+        self.view_laptop = None
+        self.view_nvidia = None
+        self.view_amd = None
+        self.view_cleaning = None
+        self.view_drivers = None
+        self.view_repair = None
+        self.view_power = None
+        self.view_activa = None
 
         self.show_home()
         # Iniciar carga automática de datos tras un breve delay para fluidez de UI
@@ -2025,109 +2180,55 @@ class PurpleApp(ctk.CTk):
             if hasattr(self.view_drivers, 'lbl_sect2'):
                 self.view_drivers.lbl_sect2.configure(text=l["drv_ok"])
 
-    def create_nav_btn(self, text, cmd):
-        btn = ctk.CTkButton(self.nav_frame, text=text, fg_color="transparent", hover_color=COLOR_BG, anchor="w", height=40, font=("Roboto", 14), command=cmd)
-        btn.pack(fill="x", padx=10, pady=5)
-        return btn
+    def get_view(self, name):
+        if getattr(self, "view_" + name, None) is None:
+            if name == "home":
+                self.view_home = ctk.CTkScrollableFrame(self.main_area, fg_color=COLOR_BG)
+                self.setup_home_grid()
+            elif name == "opti": self.view_opti = OptimizationView(self.main_area)
+            elif name == "gaming": self.view_gaming = GamingView(self.main_area)
+            elif name == "input": self.view_input = InputLagView(self.main_area)
+            elif name == "debloat": self.view_debloat = DebloatView(self.main_area)
+            elif name == "security": self.view_security = SecurityView(self.main_area)
+            elif name == "laptop": self.view_laptop = LaptopView(self.main_area) if is_laptop() else ctk.CTkFrame(self.main_area)
+            elif name == "nvidia": self.view_nvidia = NvidiaView(self.main_area)
+            elif name == "amd": self.view_amd = AmdView(self.main_area)
+            elif name == "cleaning": self.view_cleaning = CleaningView(self.main_area)
+            elif name == "drivers": self.view_drivers = DriversView(self.main_area)
+            elif name == "repair": self.view_repair = RepairView(self.main_area)
+            elif name == "power": self.view_power = PowerPlanView(self.main_area)
+            elif name == "activa": self.view_activa = ActivacionView(self.main_area)
+        return getattr(self, "view_" + name)
 
-    def show_home(self):
+    def _show_view(self, view_name, btn):
         self._hide_all_views()
-        self.view_home.pack(fill="both", expand=True)
-        self._update_nav(self.btn_home)
-        if hasattr(self, 'lbl_logo') and hasattr(self, 'nav_frame'):
-            self.lbl_logo.pack(pady=30, side="top", before=self.nav_frame)
-
-    def show_opti(self):
-        self._hide_all_views()
-        self.view_opti.pack(fill="both", expand=True)
-        self._update_nav(self.btn_opti)
+        self.get_view(view_name).pack(fill="both", expand=True)
+        self._update_nav(btn)
         if hasattr(self, 'lbl_logo'):
-            self.lbl_logo.pack_forget()
+            if view_name == "home" and hasattr(self, 'nav_frame'):
+                self.lbl_logo.pack(pady=30, side="top", before=self.nav_frame)
+            else:
+                self.lbl_logo.pack_forget()
 
-
-    def show_gaming(self):
-        self._hide_all_views()
-        self.view_gaming.pack(fill="both", expand=True)
-        self._update_nav(self.btn_gaming)
-        if hasattr(self, 'lbl_logo'): self.lbl_logo.pack_forget()
-        
-    def show_input(self):
-        self._hide_all_views()
-        self.view_input.pack(fill="both", expand=True)
-        self._update_nav(self.btn_input)
-        if hasattr(self, 'lbl_logo'): self.lbl_logo.pack_forget()
-
-    def show_debloat(self):
-        self._hide_all_views()
-        self.view_debloat.pack(fill="both", expand=True)
-        self._update_nav(self.btn_debloat)
-        if hasattr(self, 'lbl_logo'): self.lbl_logo.pack_forget()
-
-    def show_security(self):
-        self._hide_all_views()
-        self.view_security.pack(fill="both", expand=True)
-        self._update_nav(self.btn_security)
-        if hasattr(self, 'lbl_logo'): self.lbl_logo.pack_forget()
-
-    def show_laptop(self):
-        self._hide_all_views()
-        self.view_laptop.pack(fill="both", expand=True)
-        self._update_nav(self.btn_laptop)
-        if hasattr(self, 'lbl_logo'):
-            self.lbl_logo.pack_forget()
-
-    def show_nvidia(self):
-        self._hide_all_views()
-        self.view_nvidia.pack(fill="both", expand=True)
-        self._update_nav(self.btn_nvidia)
-        if hasattr(self, 'lbl_logo'):
-            self.lbl_logo.pack_forget()
-
-    def show_amd(self):
-        self._hide_all_views()
-        self.view_amd.pack(fill="both", expand=True)
-        self._update_nav(self.btn_amd)
-
+    def show_home(self): self._show_view("home", self.btn_home)
+    def show_opti(self): self._show_view("opti", self.btn_opti)
+    def show_gaming(self): self._show_view("gaming", self.btn_gaming)
+    def show_input(self): self._show_view("input", self.btn_input)
+    def show_debloat(self): self._show_view("debloat", self.btn_debloat)
+    def show_security(self): self._show_view("security", self.btn_security)
+    def show_laptop(self): self._show_view("laptop", getattr(self, 'btn_laptop', None))
+    def show_nvidia(self): self._show_view("nvidia", self.btn_nvidia)
+    def show_amd(self): self._show_view("amd", getattr(self, 'btn_amd', None))
+    def show_cleaning(self): self._show_view("cleaning", self.btn_cleaning)
+    def show_drivers(self): self._show_view("drivers", self.btn_drivers)
+    def show_power(self): self._show_view("power", self.btn_power)
+    def show_activa(self): self._show_view("activa", self.btn_activa)
+    def show_repair(self): self._show_view("repair", self.btn_repair)
+    
     def show_website(self):
         import webbrowser
         webbrowser.open("https://ykz-opti.vercel.app")
-        if hasattr(self, 'lbl_logo'):
-            self.lbl_logo.pack_forget()
-
-    def show_cleaning(self):
-        self._hide_all_views()
-        self.view_cleaning.pack(fill="both", expand=True)
-        self._update_nav(self.btn_cleaning)
-        if hasattr(self, 'lbl_logo'):
-            self.lbl_logo.pack_forget()
-
-    def show_drivers(self):
-        self._hide_all_views()
-        self.view_drivers.pack(fill="both", expand=True)
-        self._update_nav(self.btn_drivers)
-        if hasattr(self, 'lbl_logo'):
-            self.lbl_logo.pack_forget()
-
-    def show_power(self):
-        self._hide_all_views()
-        self.view_power.pack(fill="both", expand=True)
-        self._update_nav(self.btn_power)
-        if hasattr(self, 'lbl_logo'):
-            self.lbl_logo.pack_forget()
-
-    def show_activa(self):
-        self._hide_all_views()
-        self.view_activa.pack(fill="both", expand=True)
-        self._update_nav(self.btn_activa)
-        if hasattr(self, 'lbl_logo'):
-            self.lbl_logo.pack_forget()
-
-    def show_repair(self):
-        self._hide_all_views()
-        self.view_repair.pack(fill="both", expand=True)
-        self._update_nav(self.btn_repair)
-        if hasattr(self, 'lbl_logo'):
-            self.lbl_logo.pack_forget()
+        if hasattr(self, 'lbl_logo'): self.lbl_logo.pack_forget()
 
     def _hide_all_views(self):
         views = [
@@ -2142,24 +2243,19 @@ class PurpleApp(ctk.CTk):
                 if v: v.pack_forget()
 
     def _update_nav(self, active_btn):
-        self.btn_home.configure(fg_color="transparent")
-        self.btn_opti.configure(fg_color="transparent")
-        if hasattr(self, 'btn_laptop'): self.btn_laptop.configure(fg_color="transparent")
-        self.btn_nvidia.configure(fg_color="transparent")
-        self.btn_amd.configure(fg_color="transparent")
-        self.btn_cleaning.configure(fg_color="transparent")
-        self.btn_drivers.configure(fg_color="transparent")
-        self.btn_repair.configure(fg_color="transparent")
-        self.btn_power.configure(fg_color="transparent")
-        self.btn_activa.configure(fg_color="transparent")
-        
-        if hasattr(self, 'btn_gaming'): self.btn_gaming.configure(fg_color="transparent")
-        if hasattr(self, 'btn_input'): self.btn_input.configure(fg_color="transparent")
-        if hasattr(self, 'btn_debloat'): self.btn_debloat.configure(fg_color="transparent")
-        if hasattr(self, 'btn_security'): self.btn_security.configure(fg_color="transparent")
-        
-        # Use ACCENT color for the active button so it "pops" and doesn't look black
-        active_btn.configure(fg_color=COLOR_ACCENT)
+        buttons = [
+            'btn_home', 'btn_opti', 'btn_laptop', 'btn_nvidia', 'btn_amd',
+            'btn_cleaning', 'btn_drivers', 'btn_repair', 'btn_power',
+            'btn_activa', 'btn_gaming', 'btn_input', 'btn_debloat', 'btn_security'
+        ]
+        for btn_name in buttons:
+            if hasattr(self, btn_name):
+                btn = getattr(self, btn_name)
+                if hasattr(btn, "set_active"):
+                    btn.set_active(False)
+                    
+        if hasattr(active_btn, "set_active"):
+            active_btn.set_active(True)
 
     def setup_home_grid(self):
         l = LANG.get(getattr(self, 'current_lang', 'ES'), LANG["ES"])
